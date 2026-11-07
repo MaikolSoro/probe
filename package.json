@@ -1,0 +1,31 @@
+{
+  "name": "avenzoq-probe",
+  "version": "0.1.0",
+  "description": "Security scanner for MCP servers and AI agents: tool poisoning, excessive agency and prompt injection.",
+  "main": "src/cli.mjs",
+  "scripts": {
+    "test": "node --test test/*.test.mjs",
+    "demo:mcp": "node src/cli.mjs mcp --call-readonly --out reports/demo-mcp -- node examples/vulnerable-mcp-server.mjs",
+    "demo:agent": "node src/cli.mjs agent --url http://localhost:8787/chat --out reports/demo-agent"
+  },
+  "keywords": [
+    "mcp",
+    "ai-security",
+    "prompt-injection",
+    "llm",
+    "agents",
+    "red-team"
+  ],
+  "author": "AVENZOQ",
+  "type": "module",
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "^1.32.2",
+    "zod": "^4.6.7"
+  },
+  "bin": {
+    "probe": "src/cli.mjs"
+  },
+  "engines": {
+    "node": ">=20"
+  }
+}
