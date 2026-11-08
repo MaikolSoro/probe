@@ -10,7 +10,7 @@ This project is **separate** from the AVENZOQ website (`../avenqor-web`, its own
 
 ## Status (2026-11-07)
 
-- Version 0.4.0: modes `mcp`, `agent`, `config`, `skills`; SARIF, `--fail-on`, `.probeignore`, GitHub Action; **LLM judge** (`--llm`), **rug-pull pins** (`--pin`), **32 agent probes** with OpenAI/Anthropic targets, multi-turn and tool-use. `npm test` passes 21/21. The LLM judge is only tested with a mocked model (no API key used during development).
+- Version 0.5.0: modes `mcp`, `agent`, `config`, `skills`; SARIF, `--fail-on`, `.probeignore`, GitHub Action; **LLM judge** (`--llm`), **rug-pull pins** (`--pin`), **32 agent probes** with OpenAI/Anthropic targets, multi-turn and tool-use. `npm test` passes 21/21. The LLM judge is only tested with a mocked model (no API key used during development). Plus the **benchmark** (`bench/`, pattern F1 90 %, guarded by a test) and the **research kit** (`research/`, Docker-isolated scans with a disclosure policy). Scans of public servers have NOT been run yet: they need Docker running and the owner's go-ahead.
 - **GitHub:** https://github.com/MaikolSoro/probe (branch `main`). Not on npm yet.
 - **License: Apache-2.0** (`LICENSE`, `NOTICE`). The Geist fonts are under the OFL (`assets/OFL.txt`). The AVENZOQ name and logo are not licensed.
 - **npm:** `@avenzoq/probe`, with the `probe` and `avenzoq-probe` commands. Only the owner can publish (`npm login`, then `npm publish`); the npm org `avenzoq` must exist first.
@@ -50,6 +50,8 @@ node src/cli.mjs                           # usage
 | `assets/` | Geist fonts and the AVENZOQ mark used by the HTML report |
 | `examples/` | Deliberately vulnerable MCP server and a mock agent that obeys anything. Both are fake and do nothing real |
 | `test/` | `node:test` unit tests for the rules |
+| `bench/` | `cases.mjs` (labeled corpus) and `run.mjs` (precision/recall/F1, `--llm`, `--write` → RESULTS.md). When you change rules, run `npm run bench` and keep F1 ≥ 85 % (enforced by `test/bench.test.mjs`). Add a benign near-miss for every new rule |
+| `research/` | State of MCP Security kit: `Dockerfile` (locked-down runner), `run.mjs`, `aggregate.mjs` (public aggregate + private per-server table), methodology and disclosure template. `research/results/` is git-ignored: **never publish server names before disclosure** |
 | `docs/` | Strategy and roadmap; `docs/assets/` holds the README banner, the animated terminal SVG and the report preview |
 | `scripts/readme-assets.mjs` | Regenerates `banner.svg` and `terminal.svg`. Update the numbers in it when checks change |
 | `.github/workflows/ci.yml` | Tests on Node 20/22/24, plus the demo scan |

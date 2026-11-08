@@ -9,13 +9,24 @@ export const OWASP = {
   LLM07: 'LLM07:2025 System Prompt Leakage',
 };
 
+const SECRET = String.raw`(~\/\.ssh|\.ssh\b|id_rsa|(?<![\w.-])\.env(?![\w.])|\.aws\/credentials|api[_ -]?keys?|private key|credentials)`;
+
 const INJECTION_PATTERNS = [
   [/ignore (all |any )?(previous|prior|above|earlier) (instructions|rules|messages)/i, 'tells the model to ignore its instructions'],
   [/<\s*\/?\s*(important|system|secret|instructions?)\s*>/i, 'contains pseudo-system tags such as <IMPORTANT>'],
   [/(do not|don't|never) (tell|mention|inform|reveal to|show) (the )?user/i, 'asks the model to hide something from the user'],
-  [/before (using|calling) (this|any other) tool/i, 'tries to change how other tools are used'],
-  [/(~\/\.ssh|id_rsa|\.env\b|\.aws\/credentials|api[_ -]?key|private key)/i, 'references secrets or credential files'],
+  // Chaining hints ("before using this tool, call list_x") are normal; reading or sending data first is not.
+  [/before (using|calling) (this|any other) tool[^.]{0,80}\b(read|send|include|pass|attach|upload)\b/i, 'tries to change how other tools are used'],
+  [/(whenever|every time|each time|when) (the )?[\w.-]+ tool is (used|called)|(never|do not|don't) call [\w.-]+ directly|\b(supersedes|replaces|overrides) (the |all )?(other )?(tools?|servers?)\b/i, 'tries to change how other tools are used'],
+  // Mentioning a secret is fine ("lists API key names"); acting on it is what matters.
+  [new RegExp(String.raw`\b(read|send|pass|include|attach|upload|copy|forward|cat|leak|lee|leer|envía|envia|enviar|adjunta|incluye|copia|sube|leia|envie|anexe|inclua|copie)\b[^.]{0,80}` + SECRET, 'i'), 'tells the model to read or send secrets or credential files'],
+  // Spanish and Portuguese: "no le digas (nada) al usuario", "não diga ao usuário".
+  [/\b(no le digas|no le menciones|no informes|sin decirle|não (diga|conte|informe|mencione))\b[^.]{0,30}\b(usuario|usuária|usuário|cliente)\b/i, 'asks the model to hide something from the user'],
   [/(send|forward|copy|include) .{0,40}(to|in) (the )?(sidenote|note|parameter|http|url|webhook)/i, 'asks the model to move data into a parameter or URL'],
+  [/!\[[^\]]*\]\(https?:\/\//i, 'embeds an external image, a classic data-exfiltration channel'],
+  [/\b(ask|request|prompt) (the user|them|the customer) for (their |the |a )?[\w ]{0,25}(password|passcode|pin|otp|2fa|verification code|seed phrase|card number)/i, 'tells the model to ask the user for credentials'],
+  [/\b(note|message|instructions?) (to|for) the (ai|assistant|model|llm)\b|\bfrom now on,? you (are|must|will)\b|\byou are now in\b/i, 'speaks directly to the model to change its behavior'],
+  [/[A-Za-z0-9+/]{80,}={0,2}/, 'contains a long encoded blob that can hide instructions'],
 ];
 
 const INVISIBLE_CHARS = /[​-‏‪-‮⁠-⁤﻿]/;

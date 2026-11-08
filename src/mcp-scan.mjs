@@ -45,7 +45,7 @@ export async function scanMcp({ command, args = [], url, env, callReadonly = fal
   const transport = url
     ? new StreamableHTTPClientTransport(new URL(url))
     : new StdioClientTransport({ command, args, env: env ? { ...getDefaultEnvironment(), ...env } : undefined, stderr: 'ignore' });
-  const client = new Client({ name: 'avenzoq-probe', version: '0.4.0' });
+  const client = new Client({ name: 'avenzoq-probe', version: '0.5.0' });
 
   // A server that never answers must not hang the scan; closing the client also stops its process.
   let timer;

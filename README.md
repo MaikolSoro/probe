@@ -262,6 +262,26 @@ config-unpinned-package *
 
 Suppressed findings are counted in the summary, so nothing disappears silently.
 
+## Accuracy
+
+Probe ships with a labeled benchmark (`bench/`): 42 malicious and tricky-benign tool descriptions and skill files. Some benign cases are deliberately hard, for example security documentation that quotes attack text.
+
+| Mode | Precision | Recall | F1 |
+|---|---|---|---|
+| Pattern rules only | 90% | 90% | 90% |
+| + LLM judge (`--llm`) | run `npm run bench -- --llm` | | |
+
+The remaining pattern misses are **paraphrased** attacks, and the false positives are **docs that quote attacks**. Telling those apart is the LLM judge's job. The corpus was used while developing the rules, so treat these as optimistic numbers; see [bench/RESULTS.md](bench/RESULTS.md).
+
+## Research
+
+`research/` contains the kit for the **State of MCP Security** study:
+- public MCP servers are scanned inside a locked-down container;
+- no tool is ever called;
+- results are published as aggregates only after responsible disclosure to maintainers.
+
+See [research/README.md](research/README.md).
+
 ## How it works
 
 ```
@@ -292,7 +312,8 @@ Everything is plain Node.js ESM, with no build step. The only dependencies are t
 - [x] SARIF output and GitHub Action
 - [x] `.probeignore` and `--fail-on`
 - [x] LLM judge (`--llm`)
-- [ ] Public benchmark and "State of MCP Security" research
+- [x] Public benchmark (`bench/`)
+- [ ] "State of MCP Security" report (kit ready in `research/`)
 - [ ] **Guard:** a runtime policy firewall between agents and their tools
 
 See [docs/ROADMAP.md](docs/ROADMAP.md).

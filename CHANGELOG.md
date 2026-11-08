@@ -2,6 +2,17 @@
 
 All notable changes to this project are documented here. Versions follow [Semantic Versioning](https://semver.org).
 
+## [0.5.0] - 2026-11-08
+
+### Added
+- **Benchmark** (`bench/`): a labeled corpus of 42 malicious and tricky-benign MCP tool descriptions and skill files, with a runner that reports precision, recall and F1 (`npm run bench`, `--llm` to include the judge). A test fails if F1 drops below 85 %.
+- **Research kit** (`research/`): an isolated Docker runner that scans public MCP servers without calling any tool, aggregation into a public draft plus a private per-server table, the methodology, and a responsible-disclosure policy and template.
+
+### Changed
+- Stronger injection rules: tool shadowing ("whenever X tool is used", "never call X directly", "supersedes other tools"), markdown-image exfiltration, asking the user for credentials, text addressed to the model ("note to the AI", "from now on you are"), encoded blobs, and Spanish/Portuguese hide-from-user phrases.
+- Fewer false positives: mentioning a secret ("lists API key names", `.env.example`) or a chaining hint ("before using this tool, call list_x") is no longer flagged; acting on it still is.
+- Pattern-only benchmark F1 rose from 68 % to 90 % (development set; see `bench/RESULTS.md` for the caveats).
+
 ## [0.4.0] - 2026-11-08
 
 ### Added

@@ -36,11 +36,17 @@
 - Rug-pull detection (`--pin`, `--update-pins`).
 - 32 agent probes; multi-turn; tool-use with fake tools; OpenAI and Anthropic targets; `--history-field`, `--categories`.
 
+## Done (v0.5.0, 2026-11-08): Sprint 3, credibility (part 1)
+
+- Benchmark corpus and runner; stronger rules; pattern F1 went from 68 % to 90 % on the development set.
+- Research kit for State of MCP Security (isolated runner, aggregation, disclosure policy).
+
 ## Next (to make it useful for real users)
 
-1. **Benchmark:** a corpus of known-good and known-bad MCP servers and skills, with Probe's measured precision and recall published.
-2. **LLM judge for agent replies:** classify partial leaks and soft compliance that canaries miss.
-3. **Probe pack in Spanish and Portuguese**, for the Latin American market and as a differentiator.
+1. **Run the State of MCP Security study:** start Docker, run `research/run.mjs`, review the criticals by hand, disclose, then publish the aggregate report.
+2. **Held-out benchmark:** new cases written without looking at the rules, plus an LLM-judge column.
+3. **LLM judge for agent replies:** classify partial leaks and soft compliance that canaries miss.
+4. **Probe pack in Spanish and Portuguese**, for the Latin American market and as a differentiator.
 
 ## Later (product)
 

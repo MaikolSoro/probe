@@ -1,0 +1,22 @@
+# Public MCP servers to scan, one npm package per line (name or name@version).
+# Starter list of widely used servers; verify names before a run and add more.
+# Servers that need an API key to start will be recorded as "did not start".
+@modelcontextprotocol/server-filesystem /tmp
+@modelcontextprotocol/server-memory
+@modelcontextprotocol/server-everything
+@modelcontextprotocol/server-sequential-thinking
+@playwright/mcp
+@upstash/context7-mcp
+@notionhq/notion-mcp-server
+@supabase/mcp-server-supabase
+@sentry/mcp-server
+@wonderwhy-er/desktop-commander
+firecrawl-mcp
+tavily-mcp
+exa-mcp-server
+figma-developer-mcp
+mcp-server-kubernetes
+@heroku/mcp-server
+@agentdeskai/browser-tools-mcp
+@browserbasehq/mcp-server-browserbase
+@21st-dev/magic
