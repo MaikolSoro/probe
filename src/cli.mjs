@@ -58,6 +58,7 @@ Reports:
   --sarif <file>      Write SARIF 2.1.0 for GitHub code scanning
   --sarif-uri <path>  File to attach non-file findings to in SARIF (default: the scanned file)
   --json              Print the raw JSON result instead of the summary
+  --timeout <seconds> How long to wait for each MCP server to start and answer (default: 30)
 
 CI:
   --fail-on <level>   Exit 1 when a finding is at or above: critical, high (default), medium, low, none
@@ -106,15 +107,16 @@ async function main() {
   const { opts, rest } = parse(modeArgs);
   const threshold = failThreshold(opts['fail-on']);
 
+  const timeoutMs = opts.timeout ? Number(opts.timeout) * 1000 : undefined;
   const llm = opts.llm ? { model: opts['llm-model'] ?? DEFAULT_MODEL } : undefined;
   const pins = opts.pin ? { file: opts.pin, data: readPins(opts.pin), update: opts.updatePins } : undefined;
   const system = opts.system?.startsWith('@') ? readFileSync(opts.system.slice(1), 'utf8') : opts.system;
 
   let scan;
   if (mode === 'mcp' && (opts.url || rest.length)) {
-    scan = await scanMcp({ url: opts.url, command: rest[0], args: rest.slice(1), callReadonly: opts.callReadonly, pins, llm });
+    scan = await scanMcp({ url: opts.url, command: rest[0], args: rest.slice(1), callReadonly: opts.callReadonly, pins, llm, timeoutMs });
   } else if (mode === 'config') {
-    scan = await scanConfigs({ paths: opts.path ? [opts.path] : undefined, connect: !opts.noConnect, pins, llm });
+    scan = await scanConfigs({ paths: opts.path ? [opts.path] : undefined, connect: !opts.noConnect, pins, llm, timeoutMs });
   } else if (mode === 'skills' && rest[0]) {
     scan = scanSkills(rest[0]);
     if (llm) scan = await judgeSkills(scan, llm);

@@ -9,4 +9,4 @@ COPY assets ./assets
 # Unprivileged user; npm cache and HOME live on the tmpfs mounted at /tmp.
 USER node
 ENV HOME=/tmp npm_config_cache=/tmp/npm npm_config_update_notifier=false
-ENTRYPOINT ["node", "/probe/src/cli.mjs", "mcp", "--json", "--fail-on", "none", "--"]
+ENTRYPOINT ["node", "/probe/src/cli.mjs", "mcp", "--json", "--fail-on", "none", "--timeout", "90", "--"]

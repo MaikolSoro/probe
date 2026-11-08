@@ -95,6 +95,7 @@ export function checkServerConfig(name, cfg) {
 }
 
 export async function scanConfigs({ paths, connect = true, timeoutMs = 20000, pins, llm } = {}) {
+  timeoutMs ??= 20000;
   const configs = paths ? paths.map((p) => ['Custom', p]) : KNOWN_CONFIGS;
   const sources = [];
   const findings = [];

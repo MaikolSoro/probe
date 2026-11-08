@@ -2,6 +2,12 @@
 
 All notable changes to this project are documented here. Versions follow [Semantic Versioning](https://semver.org).
 
+## [0.6.1] - 2026-11-08
+
+### Added
+- `--timeout <seconds>` for slow-starting MCP servers (the default stays at 30 s).
+- The research runner scans 3 servers in parallel, and the target list now has 80 public MCP servers.
+
 ## [0.6.0] - 2026-11-08
 
 ### Added

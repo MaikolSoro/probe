@@ -41,11 +41,12 @@ async function checkOutputs(client, tools) {
   return { findings, called, outputs };
 }
 
-export async function scanMcp({ command, args = [], url, env, callReadonly = false, timeoutMs = 30000, pins, llm }) {
+export async function scanMcp({ command, args = [], url, env, callReadonly = false, timeoutMs, pins, llm }) {
+  timeoutMs ??= 30000;
   const transport = url
     ? new StreamableHTTPClientTransport(new URL(url))
     : new StdioClientTransport({ command, args, env: env ? { ...getDefaultEnvironment(), ...env } : undefined, stderr: 'ignore' });
-  const client = new Client({ name: 'avenzoq-probe', version: '0.6.0' });
+  const client = new Client({ name: 'avenzoq-probe', version: '0.6.1' });
 
   // A server that never answers must not hang the scan; closing the client also stops its process.
   let timer;
