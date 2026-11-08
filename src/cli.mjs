@@ -4,15 +4,21 @@ import { writeFileSync, mkdirSync } from 'node:fs';
 import { join } from 'node:path';
 import { scanMcp } from './mcp-scan.mjs';
 import { scanAgent } from './agent-scan.mjs';
+import { scanSkills } from './skills-scan.mjs';
+import { scanConfigs } from './config-scan.mjs';
 import { printSummary, toMarkdown } from './report.mjs';
 import { toHtml, htmlToPdf } from './report-html.mjs';
 
-const USAGE = `avenzoq-probe 0.1.0 — security scanner for MCP servers and AI agents
+const USAGE = `avenzoq-probe 0.2.0 — security scanner for MCP servers, AI agents and agent skills
 
 Usage:
   probe mcp [options] -- <command> [args...]   Scan a local (stdio) MCP server
   probe mcp --url <url> [options]              Scan a remote (Streamable HTTP) MCP server
   probe agent --url <url> [options]            Send prompt-injection probes to a chat endpoint
+  probe config [--path <file>] [--no-connect]  Audit the MCP servers configured in Claude, Cursor,
+                                               VS Code and Windsurf (starts each configured server)
+  probe skills <path>                          Scan skills, slash commands, CLAUDE.md/AGENTS.md,
+                                               hooks and install scripts before you install them
 
 MCP options:
   --call-readonly     Also call tools marked read-only that take no arguments and
@@ -47,6 +53,7 @@ function parse(argv) {
     else if (a === '--call-readonly') opts.callReadonly = true;
     else if (a === '--html') opts.html = true;
     else if (a === '--pdf') opts.pdf = true;
+    else if (a === '--no-connect') opts.noConnect = true;
     else if (a === '--header') {
       const [k, ...v] = argv[++i].split(':');
       opts.headers[k.trim()] = v.join(':').trim();
@@ -63,6 +70,10 @@ async function main() {
   let scan;
   if (mode === 'mcp' && (opts.url || rest.length)) {
     scan = await scanMcp({ url: opts.url, command: rest[0], args: rest.slice(1), callReadonly: opts.callReadonly });
+  } else if (mode === 'config') {
+    scan = await scanConfigs({ paths: opts.path ? [opts.path] : undefined, connect: !opts.noConnect });
+  } else if (mode === 'skills' && rest[0]) {
+    scan = scanSkills(rest[0]);
   } else if (mode === 'agent' && opts.url) {
     scan = await scanAgent({ url: opts.url, field: opts.field, reply: opts.reply, headers: opts.headers });
   } else {

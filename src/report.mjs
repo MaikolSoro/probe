@@ -1,6 +1,13 @@
 // Turns a scan result into a terminal summary and a Markdown report.
 export const ORDER = ['critical', 'high', 'medium', 'low'];
 
+const KIND = {
+  mcp: 'MCP server (static analysis of tool definitions)',
+  agent: 'Chat agent (prompt-injection probes)',
+  skills: 'Agent skills and instruction files (static analysis)',
+  config: 'MCP client configuration and configured servers',
+};
+
 const COLOR = { critical: '\x1b[35m', high: '\x1b[31m', medium: '\x1b[33m', low: '\x1b[36m' };
 const RESET = '\x1b[0m';
 
@@ -17,6 +24,11 @@ export function printSummary(scan, { color = process.stdout.isTTY } = {}) {
   const lines = [`\nAVENZOQ Probe · ${scan.kind.toUpperCase()} · ${scan.target}`];
   if (scan.server) lines.push(`Server: ${scan.server} · ${scan.tools.length} tools`);
   if (scan.called) lines.push(`Read-only tools called: ${scan.called.length ? scan.called.map((c) => c.tool).join(', ') : 'none'}`);
+  if (scan.kind === 'skills') lines.push(`Files: ${scan.files} · skills: ${scan.skills} · external domains: ${scan.domains.length}`);
+  if (scan.kind === 'config') {
+    for (const src of scan.sources) lines.push(`Config: ${src.client} · ${src.file} · ${src.servers} servers`);
+    for (const srv of scan.servers) lines.push(`  ${srv.name}: ${srv.status}`);
+  }
   if (scan.results) {
     const vuln = scan.results.filter((r) => r.status === 'vulnerable').length;
     lines.push(`Probes: ${scan.results.length} sent · ${vuln} succeeded`);
@@ -37,13 +49,19 @@ export function toMarkdown(scan, date = new Date()) {
     `# AVENZOQ Probe report`,
     '',
     `- **Target:** \`${scan.target}\``,
-    `- **Type:** ${scan.kind === 'mcp' ? 'MCP server (static analysis of tool definitions)' : 'Chat agent (prompt-injection probes)'}`,
+    `- **Type:** ${KIND[scan.kind]}`,
     `- **Date:** ${date.toISOString().slice(0, 10)}`,
   ];
   if (scan.server) out.push(`- **Server:** ${scan.server} · tools: ${scan.tools.map((t) => `\`${t}\``).join(', ')}`);
   if (scan.called) out.push(`- **Read-only tools called:** ${scan.called.length ? scan.called.map((c) => `\`${c.tool}\` (${c.status})`).join(', ') : 'none'}`);
   out.push('', '## Summary', '', '| Critical | High | Medium | Low |', '|---|---|---|---|', `| ${c.critical} | ${c.high} | ${c.medium} | ${c.low} |`, '');
 
+  if (scan.kind === 'skills') out.push(`Files scanned: ${scan.files} (${scan.skills} skills). External domains referenced: ${scan.domains.join(', ') || 'none'}.`, '');
+  if (scan.kind === 'config') {
+    out.push('## Servers', '', '| Server | Status |', '|---|---|');
+    for (const srv of scan.servers) out.push(`| ${srv.name} | ${srv.status} |`);
+    out.push('');
+  }
   if (scan.results) {
     out.push('## Probes', '', '| Probe | Result |', '|---|---|');
     for (const r of scan.results) out.push(`| ${r.probe} | ${r.status}${r.error ? ` (${r.error})` : ''} |`);

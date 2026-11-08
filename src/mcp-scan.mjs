@@ -1,6 +1,6 @@
 // Connects to an MCP server, lists what it exposes and runs the static rules.
 import { Client } from '@modelcontextprotocol/sdk/client/index.js';
-import { StdioClientTransport } from '@modelcontextprotocol/sdk/client/stdio.js';
+import { StdioClientTransport, getDefaultEnvironment } from '@modelcontextprotocol/sdk/client/stdio.js';
 import { StreamableHTTPClientTransport } from '@modelcontextprotocol/sdk/client/streamableHttp.js';
 import { checkServer, injectionSignals, OWASP } from './rules.mjs';
 
@@ -37,16 +37,21 @@ async function checkOutputs(client, tools) {
   return { findings, called };
 }
 
-export async function scanMcp({ command, args = [], url, callReadonly = false }) {
+export async function scanMcp({ command, args = [], url, env, callReadonly = false, timeoutMs = 30000 }) {
   const transport = url
     ? new StreamableHTTPClientTransport(new URL(url))
-    : new StdioClientTransport({ command, args, stderr: 'ignore' });
-  const client = new Client({ name: 'avenzoq-probe', version: '0.1.0' });
+    : new StdioClientTransport({ command, args, env: env ? { ...getDefaultEnvironment(), ...env } : undefined, stderr: 'ignore' });
+  const client = new Client({ name: 'avenzoq-probe', version: '0.2.0' });
 
-  await client.connect(transport);
+  // A server that never answers must not hang the scan; closing the client also stops its process.
+  let timer;
+  const timeout = new Promise((_, reject) => {
+    timer = setTimeout(() => reject(new Error(`timed out after ${timeoutMs / 1000}s`)), timeoutMs);
+  });
   try {
+    await Promise.race([client.connect(transport), timeout]);
     const server = client.getServerVersion();
-    const { tools } = await client.listTools();
+    const { tools } = await Promise.race([client.listTools(), timeout]);
     const findings = checkServer(tools);
     let called;
     if (callReadonly) {
@@ -63,6 +68,7 @@ export async function scanMcp({ command, args = [], url, callReadonly = false })
       findings,
     };
   } finally {
-    await client.close();
+    clearTimeout(timer);
+    await client.close().catch(() => {});
   }
 }

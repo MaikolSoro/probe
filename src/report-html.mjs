@@ -20,6 +20,8 @@ const T = {
     client: 'Prepared for',
     mcp: 'MCP server',
     agent: 'AI chat agent',
+    skills: 'Agent skills and instruction files',
+    config: 'MCP client configuration',
     overall: 'Overall risk',
     sev: { critical: 'Critical', high: 'High', medium: 'Medium', low: 'Low', none: 'No findings' },
     summary: 'Executive summary',
@@ -39,6 +41,8 @@ const T = {
     scopeMcp: (n) => `Static analysis of the ${n} tools the MCP server exposes: names, descriptions, input schemas and annotations. No tool was executed for this part.`,
     scopeCalled: (list) => `Tools that declare themselves read-only and take no arguments were also called once (${list}) to check their output for planted instructions.`,
     scopeAgent: (n) => `${n} test messages were sent to the chat endpoint. Each one tries to make the agent follow untrusted instructions and carries a random code; if the code comes back, the agent obeyed.`,
+    scopeSkills: (n, k, d) => `Static analysis of ${n} files (${k} skills): instruction text aimed at the agent, invisible characters, scripts that download and run code, writes to sensitive files, hooks and MCP installs. Nothing was executed. External domains referenced: ${d || 'none'}.`,
+    scopeConfig: (list) => `Review of the MCP servers configured in local AI clients (${list}), including secrets in plain text, unpinned packages and insecure transport, plus the static tool checks on each server that could be started.`,
     disclaimer: 'This report covers only the checks listed above, on the date shown. A clean result does not guarantee that a system is secure. Tests were run only on systems the client owns or authorized.',
   },
   es: {
@@ -49,6 +53,8 @@ const T = {
     client: 'Preparado para',
     mcp: 'Servidor MCP',
     agent: 'Agente de chat con IA',
+    skills: 'Skills e instrucciones de agentes',
+    config: 'Configuración de clientes MCP',
     overall: 'Riesgo general',
     sev: { critical: 'Crítico', high: 'Alto', medium: 'Medio', low: 'Bajo', none: 'Sin hallazgos' },
     summary: 'Resumen ejecutivo',
@@ -68,6 +74,8 @@ const T = {
     scopeMcp: (n) => `Análisis estático de las ${n} herramientas que expone el servidor MCP: nombres, descripciones, parámetros y anotaciones. En esta parte no se ejecutó ninguna herramienta.`,
     scopeCalled: (list) => `Además, se llamó una vez a las herramientas que se declaran de solo lectura y no reciben parámetros (${list}) para revisar si su respuesta trae instrucciones plantadas.`,
     scopeAgent: (n) => `Se enviaron ${n} mensajes de prueba al chat. Cada uno intenta que el agente siga instrucciones no confiables y lleva un código aleatorio; si el código vuelve en la respuesta, el agente obedeció.`,
+    scopeSkills: (n, k, d) => `Análisis estático de ${n} archivos (${k} skills): texto dirigido al agente, caracteres invisibles, scripts que descargan y ejecutan código, escritura en archivos sensibles, hooks e instalación de servidores MCP. No se ejecutó nada. Dominios externos referenciados: ${d || 'ninguno'}.`,
+    scopeConfig: (list) => `Revisión de los servidores MCP configurados en los clientes de IA locales (${list}): secretos en texto plano, paquetes sin versión fija y transporte inseguro, más las pruebas estáticas de herramientas en cada servidor que se pudo iniciar.`,
     disclaimer: 'Este informe cubre solo las pruebas descritas, en la fecha indicada. Un resultado limpio no garantiza que un sistema sea seguro. Las pruebas se hicieron únicamente sobre sistemas del cliente o con su autorización.',
   },
 };
@@ -98,7 +106,9 @@ export function toHtml(scan, { lang = 'en', client = '', date = new Date() } = {
   if (scan.kind === 'mcp') {
     scope.push(t.scopeMcp(scan.tools.length));
     if (scan.called?.length) scope.push(t.scopeCalled(scan.called.map((x) => x.tool).join(', ')));
-  } else scope.push(t.scopeAgent(scan.results.length));
+  } else if (scan.kind === 'skills') scope.push(t.scopeSkills(scan.files, scan.skills, scan.domains.join(', ')));
+  else if (scan.kind === 'config') scope.push(t.scopeConfig(scan.sources.map((x) => x.client).join(', ') || '—'));
+  else scope.push(t.scopeAgent(scan.results.length));
 
   const card = (f, i) => {
     const g = guidance(f.id, lang) ?? { title: f.title, explain: f.detail, fix: '' };
@@ -182,7 +192,7 @@ export function toHtml(scan, { lang = 'en', client = '', date = new Date() } = {
       <dl class="meta">
         ${client ? `<dt>${t.client}</dt><dd>${esc(client)}</dd>` : ''}
         <dt>${t.target}</dt><dd class="mono">${esc(scan.target)}</dd>
-        <dt>${t.type}</dt><dd>${scan.kind === 'mcp' ? `${t.mcp}${scan.server ? ` · ${esc(scan.server)}` : ''}` : t.agent}</dd>
+        <dt>${t.type}</dt><dd>${scan.kind === 'mcp' ? `${t.mcp}${scan.server ? ` · ${esc(scan.server)}` : ''}` : t[scan.kind]}</dd>
         <dt>${t.date}</dt><dd>${fmtDate}</dd>
       </dl>
     </div>

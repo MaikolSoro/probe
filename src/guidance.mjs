@@ -182,6 +182,138 @@ const G = {
       fix: 'Nunca pongas secretos en las instrucciones del sistema y asume que se pueden filtrar. Aplica las reglas en el código, no solo en el prompt.',
     },
   },
+  'skill-hide-from-user': {
+    en: {
+      title: 'Instruction file tells the agent to hide something',
+      explain: 'A skill or instruction file asks the agent to keep something from the user. Legitimate skills have no reason to do that.',
+      fix: 'Do not install it until you understand why. Remove the text or ask the author.',
+    },
+    es: {
+      title: 'Un archivo de instrucciones le pide al agente ocultar algo',
+      explain: 'Una skill o archivo de instrucciones le pide al agente que le oculte algo al usuario. Una skill legítima no tiene por qué hacerlo.',
+      fix: 'No la instales hasta entender por qué. Elimina ese texto o consulta al autor.',
+    },
+  },
+  'skill-exfiltration': {
+    en: {
+      title: 'Instruction file asks the agent to send secrets',
+      explain: 'The text tells the agent to send keys, tokens or credential files somewhere. With your permissions, the agent can do it.',
+      fix: 'Do not install it. Report it to the author or the marketplace.',
+    },
+    es: {
+      title: 'Un archivo de instrucciones pide enviar secretos',
+      explain: 'El texto le pide al agente que envíe llaves, tokens o archivos de credenciales a algún lugar. Con tus permisos, el agente puede hacerlo.',
+      fix: 'No la instales. Repórtala al autor o al marketplace.',
+    },
+  },
+  'skill-sensitive-write': {
+    en: {
+      title: 'Writes to shell profiles, SSH keys or credentials',
+      explain: 'Changing these files can give someone persistent access or run code every time you open a terminal.',
+      fix: 'Read the exact command and only run it if you understand and accept the change.',
+    },
+    es: {
+      title: 'Escribe en perfiles de la terminal, llaves SSH o credenciales',
+      explain: 'Cambiar estos archivos puede dar acceso permanente a alguien o ejecutar código cada vez que abres una terminal.',
+      fix: 'Lee el comando exacto y ejecútalo solo si entiendes y aceptas el cambio.',
+    },
+  },
+  'skill-pipe-to-shell': {
+    en: {
+      title: 'Downloads and runs a remote script',
+      explain: 'Piping a download straight into a shell runs whatever the server sends that day, without review.',
+      fix: 'Download the script, read it, pin a version or checksum, then run it.',
+    },
+    es: {
+      title: 'Descarga y ejecuta un script remoto',
+      explain: 'Enviar una descarga directo a la terminal ejecuta lo que el servidor mande ese día, sin revisión.',
+      fix: 'Descarga el script, léelo, fija una versión o checksum y después ejecútalo.',
+    },
+  },
+  'skill-encoded-blob': {
+    en: {
+      title: 'Encoded content inside instructions',
+      explain: 'Long encoded strings can hide instructions that reviewers cannot read.',
+      fix: 'Decode it and check what it says before installing.',
+    },
+    es: {
+      title: 'Contenido codificado dentro de las instrucciones',
+      explain: 'Las cadenas codificadas largas pueden esconder instrucciones que nadie puede leer a simple vista.',
+      fix: 'Decodifícala y revisa qué dice antes de instalar.',
+    },
+  },
+  'skill-hook-command': {
+    en: {
+      title: 'Hook runs commands automatically',
+      explain: 'Hooks run on agent events (every prompt, every tool call) without asking.',
+      fix: 'Make sure every hook command is expected and comes from a source you trust.',
+    },
+    es: {
+      title: 'Un hook ejecuta comandos automáticamente',
+      explain: 'Los hooks se ejecutan en eventos del agente (cada mensaje, cada herramienta) sin preguntar.',
+      fix: 'Verifica que cada comando de hook sea esperado y venga de una fuente de confianza.',
+    },
+  },
+  'skill-broad-tools': {
+    en: {
+      title: 'Skill pre-approves unrestricted Bash',
+      explain: 'The agent can run any shell command while this skill is active, without asking.',
+      fix: 'Restrict allowed-tools to specific commands, for example Bash(git status:*).',
+    },
+    es: {
+      title: 'La skill aprueba de antemano cualquier comando Bash',
+      explain: 'Mientras la skill está activa, el agente puede ejecutar cualquier comando sin preguntar.',
+      fix: 'Limita allowed-tools a comandos específicos, por ejemplo Bash(git status:*).',
+    },
+  },
+  'skill-mcp-install': {
+    en: {
+      title: 'Adds an MCP server',
+      explain: 'The package installs or configures an MCP server, which gives the agent new tools.',
+      fix: 'Scan that server with probe mcp before enabling it.',
+    },
+    es: {
+      title: 'Agrega un servidor MCP',
+      explain: 'El paquete instala o configura un servidor MCP, que le da herramientas nuevas al agente.',
+      fix: 'Escanea ese servidor con probe mcp antes de activarlo.',
+    },
+  },
+  'config-plaintext-secret': {
+    en: {
+      title: 'Secret in plain text in the MCP config',
+      explain: 'Any program or tool that can read this file gets the credential.',
+      fix: 'Rotate the credential and load it from the system keychain or an environment variable.',
+    },
+    es: {
+      title: 'Secreto en texto plano en la configuración MCP',
+      explain: 'Cualquier programa o herramienta que lea este archivo obtiene la credencial.',
+      fix: 'Cambia la credencial y cárgala desde el llavero del sistema o una variable de entorno.',
+    },
+  },
+  'config-unpinned-package': {
+    en: {
+      title: 'MCP server without a pinned version',
+      explain: 'Each start may run a newer, or hijacked, release without you noticing.',
+      fix: 'Pin an exact version (package@1.2.3) and re-scan after updating.',
+    },
+    es: {
+      title: 'Servidor MCP sin versión fija',
+      explain: 'Cada inicio puede ejecutar una versión más nueva, o secuestrada, sin que lo notes.',
+      fix: 'Fija una versión exacta (paquete@1.2.3) y vuelve a escanear al actualizar.',
+    },
+  },
+  'config-insecure-transport': {
+    en: {
+      title: 'Remote MCP server over plain HTTP',
+      explain: 'Tool results and tokens travel unencrypted.',
+      fix: 'Use an HTTPS endpoint.',
+    },
+    es: {
+      title: 'Servidor MCP remoto sin cifrar (HTTP)',
+      explain: 'Los resultados de las herramientas y los tokens viajan sin cifrar.',
+      fix: 'Usa un endpoint HTTPS.',
+    },
+  },
   agent: {
     en: {
       title: 'The agent obeys injected instructions',

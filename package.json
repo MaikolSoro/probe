@@ -1,7 +1,7 @@
 {
   "name": "avenzoq-probe",
-  "version": "0.1.0",
-  "description": "Security scanner for MCP servers and AI agents: tool poisoning, excessive agency and prompt injection.",
+  "version": "0.2.0",
+  "description": "Red-team your AI agents, MCP servers and skills before attackers do: tool poisoning, prompt injection, excessive agency, leaked secrets.",
   "main": "src/cli.mjs",
   "scripts": {
     "test": "node --test test/*.test.mjs",
@@ -10,11 +10,15 @@
   },
   "keywords": [
     "mcp",
+    "model-context-protocol",
     "ai-security",
     "prompt-injection",
+    "tool-poisoning",
     "llm",
     "agents",
-    "red-team"
+    "red-team",
+    "claude-code",
+    "owasp"
   ],
   "author": "AVENZOQ",
   "type": "module",
@@ -27,5 +31,19 @@
   },
   "engines": {
     "node": ">=20"
-  }
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/MaikolSoro/probe.git"
+  },
+  "homepage": "https://github.com/MaikolSoro/probe#readme",
+  "bugs": {
+    "url": "https://github.com/MaikolSoro/probe/issues"
+  },
+  "files": [
+    "src",
+    "assets",
+    "README.md",
+    "SECURITY.md"
+  ]
 }

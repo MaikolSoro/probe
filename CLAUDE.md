@@ -10,8 +10,8 @@ This project is **separate** from the AVENZOQ website (`../avenqor-web`, its own
 
 ## Status (2026-11-07)
 
-- Version 0.1.0, working and tested locally (`npm test`: 6/6 pass; both demos run; HTML/PDF reports in es/en verified).
-- **Not published:** no GitHub repo and no npm package yet.
+- Version 0.2.0: four modes (`mcp`, `agent`, `config`, `skills`). `npm test` passes, both demos run and HTML/PDF reports (es/en) are verified. Validated on Claude-BugHunter (83 skills): no critical/high/medium findings after tuning false positives.
+- **GitHub:** https://github.com/MaikolSoro/probe (branch `main`). Not on npm yet.
 - **No license chosen yet.** Apache-2.0 or MIT are the usual choices for adoption. This is the owner's decision, so ask before adding one.
 - Package name `avenzoq-probe`, binary `probe`.
 
@@ -33,6 +33,8 @@ node src/cli.mjs                           # usage
 | `src/cli.mjs` | Argument parsing, runs a scan, prints the summary, writes reports, sets the exit code (1 = critical/high, 2 = error) |
 | `src/rules.mjs` | Static rules for MCP tool definitions (`checkTool`, `checkServer`), `injectionSignals(text)`, OWASP labels |
 | `src/mcp-scan.mjs` | Connects over stdio or Streamable HTTP with `@modelcontextprotocol/sdk`, lists tools, optional read-only output check |
+| `src/config-scan.mjs` | Finds MCP configs (Claude Desktop/Code, Cursor, VS Code, Windsurf), checks secrets, unpinned packages and plain HTTP, then scans each server (`--no-connect` skips starting them) |
+| `src/skills-scan.mjs` | Static scan of skills, slash commands, CLAUDE.md/AGENTS.md, hooks and install scripts; severity drops for commands that only appear in docs or comments |
 | `src/agent-scan.mjs` | POSTs each probe to a chat endpoint and detects canaries |
 | `src/payloads.mjs` | The prompt-injection probes (id, title, OWASP, `build(canary)`, optional `detect`, `severity`) |
 | `src/report.mjs` | Terminal summary and Markdown report |
@@ -41,7 +43,10 @@ node src/cli.mjs                           # usage
 | `assets/` | Geist fonts and the AVENZOQ mark used by the HTML report |
 | `examples/` | Deliberately vulnerable MCP server and a mock agent that obeys anything. Both are fake and do nothing real |
 | `test/` | `node:test` unit tests for the rules |
-| `docs/` | Strategy and roadmap |
+| `docs/` | Strategy and roadmap; `docs/assets/` holds the README banner, the animated terminal SVG and the report preview |
+| `scripts/readme-assets.mjs` | Regenerates `banner.svg` and `terminal.svg`. Update the numbers in it when checks change |
+| `.github/workflows/ci.yml` | Tests on Node 20/22/24, plus the demo scan |
+| `SECURITY.md`, `CONTRIBUTING.md` | Policies for reporting issues and adding rules |
 | `reports/` | Scan output (git-ignored) |
 
 ## Conventions

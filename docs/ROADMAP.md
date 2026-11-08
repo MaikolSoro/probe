@@ -16,15 +16,22 @@
 - Client-ready HTML/PDF report (`--html`, `--pdf`, `--lang es|en`, `--client`), with an executive summary, grouped issues and fixes in plain language. Used to deliver AVENZOQ AI-security audits.
 - Vulnerable demo MCP server, mock agent and unit tests.
 
+## Done (v0.2.0, 2026-11-07)
+
+- `probe config`: audits the MCP configs of Claude Desktop, Claude Code, Cursor, VS Code and Windsurf. It checks for plain-text secrets, unpinned `npx`/`uvx` packages and plain-HTTP remotes, then scans every server.
+- `probe skills`: reviews skills, slash commands, CLAUDE.md/AGENTS.md, hooks and install scripts before install.
+  - Validated on Claude-BugHunter (266 files, 83 skills). The first pass flagged attack *descriptions* as critical. After tuning, only low findings remain, all of them install docs or payload examples.
+- Per-call timeout, so a hung server cannot block a scan.
+- README with banner, animated terminal SVG and report preview; SECURITY, CONTRIBUTING and CI workflow.
+
 ## Next (to make it useful for real users)
 
 1. **Publish:** choose a license, create the GitHub repo, write a CONTRIBUTING file and set up a CI workflow that runs `npm test`.
-2. **Config scan:** read the MCP config files of Claude Desktop, Cursor and VS Code (`mcpServers`) and scan every server listed, so one command audits a developer's whole setup.
-3. **SARIF output** for GitHub code scanning. Results need a file location, so anchor them to the MCP config file or to the server's entry point.
-4. **Multi-turn and tool-use probes:** support chat endpoints that take a message history, and agents that call tools. Detect whether an injected instruction leads to a tool call, not just to a canary echo.
-5. **Rug-pull detection:** save a hash of each server's tool definitions and warn when they change between scans.
-6. **Probe pack in Spanish and Portuguese**, for the Latin American market and as a differentiator.
-7. **Reduce false positives:** an allowlist or suppression file (`.probeignore`) and per-rule severity overrides.
+2. **SARIF output** for GitHub code scanning. Results need a file location, so anchor them to the MCP config file or to the server's entry point.
+3. **Multi-turn and tool-use probes:** support chat endpoints that take a message history, and agents that call tools. Detect whether an injected instruction leads to a tool call, not just to a canary echo.
+4. **Rug-pull detection:** save a hash of each server's tool definitions and warn when they change between scans.
+5. **Probe pack in Spanish and Portuguese**, for the Latin American market and as a differentiator.
+6. **Reduce false positives:** an allowlist or suppression file (`.probeignore`) and per-rule severity overrides.
 
 ## Later (product)
 
