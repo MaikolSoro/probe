@@ -2,6 +2,14 @@
 
 All notable changes to this project are documented here. Versions follow [Semantic Versioning](https://semver.org).
 
+## [0.6.2] - 2026-11-08
+
+### Fixed
+- `annotation-mismatch` no longer fires on write-like verbs ("create a non-mutating proposal… in memory"). It now only checks tools that execute, delete or move money. This was found in the expanded scan (80 targets, 39 servers started, 406 tools), where it was the only remaining questionable finding.
+
+### Changed
+- The research runner uses Node 22 and a 150 s start timeout.
+
 ## [0.6.1] - 2026-11-08
 
 ### Added

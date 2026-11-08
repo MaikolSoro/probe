@@ -38,7 +38,7 @@ function scanOne(line) {
   let stderr = '';
   child.stdout.on('data', (d) => (stdout += d));
   child.stderr.on('data', (d) => (stderr += d));
-  const killer = setTimeout(() => child.kill('SIGKILL'), 240000);
+  const killer = setTimeout(() => child.kill("SIGKILL"), 300000);
   return new Promise((resolve) => {
     child.on('close', () => {
       clearTimeout(killer);

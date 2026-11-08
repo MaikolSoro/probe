@@ -137,7 +137,9 @@ export function checkTool(tool) {
   }
 
   const a = tool.annotations ?? {};
-  if (a.readOnlyHint === true && caps.some((c) => ['exec', 'destructive', 'financial', 'write'].includes(c))) {
+  // "write" is left out: verbs like "create" also describe in-memory results
+  // ("create a non-mutating proposal"), which made this rule fire on correct annotations.
+  if (a.readOnlyHint === true && caps.some((c) => ['exec', 'destructive', 'financial'].includes(c))) {
     findings.push({
       id: 'annotation-mismatch',
       severity: 'medium',

@@ -5,7 +5,7 @@
 // Writes research/report/state-of-mcp-security.{en,es}.{md,html,pdf}; drafts are
 // watermarked until --final.
 import { readdirSync, readFileSync, writeFileSync, mkdirSync, existsSync } from 'node:fs';
-import { checkTool } from '../src/rules.mjs';
+import { checkServer } from '../src/rules.mjs';
 import { htmlToPdf } from '../src/report-html.mjs';
 import { renderMd, renderHtml } from './report.mjs';
 
@@ -14,11 +14,13 @@ const results = readdirSync(dir)
   .filter((f) => f.endsWith('.json'))
   .map((f) => JSON.parse(readFileSync(`${dir}/${f}`, 'utf8')));
 const ok = results.filter((r) => !r.error);
-// Results saved by older versions lack newer informational rules; recompute those from the stored definitions.
+// Re-apply the current rules to the stored tool definitions so rule fixes count
+// without re-running every container. Parameter checks need the input schemas,
+// which older results did not store, so those findings are kept as saved.
 for (const r of ok) {
-  if (r.definitions && !r.findings.some((f) => f.id === 'tool-steering')) {
-    r.findings.push(...r.definitions.flatMap((d) => checkTool(d)).filter((f) => f.id === 'tool-steering'));
-  }
+  if (!r.definitions) continue;
+  const kept = r.findings.filter((f) => f.id === 'unconstrained-input' || f.id === 'tool-output-injection' || f.id.startsWith('tool-') && f.id !== 'tool-poisoning' && f.id !== 'tool-steering');
+  r.findings = [...checkServer(r.definitions.map((d) => ({ ...d, inputSchema: {} }))), ...kept];
 }
 const pct = (n, d) => (d ? `${Math.round((n / d) * 100)}%` : '—');
 const has = (r, pred) => r.findings.some(pred);

@@ -49,6 +49,7 @@ test('real-world false positives stay fixed', () => {
   noRisk({ name: 'web_search', description: 'Search the web. Use excludeDomains to remove domains. `inurl:` only returns results that include a word in the URL.' }, severe);
   noRisk({ name: 'crawl', description: 'Starts a crawl job and polls until it reaches a terminal state.' }, severe);
   noRisk({ name: 'search_feedback', description: 'Send feedback on a search so we can refund 1 credit.' }, severe);
+  noRisk({ name: 'apply_machine_patches', description: 'Create a non-mutating proposal by applying patches in memory; it never writes files.', annotations: { readOnlyHint: true } }, severe);
   noRisk({ name: 'retrieve_page', description: 'Retrieve a page as Markdown. 403: the integration lacks the read/update capability.', annotations: { readOnlyHint: true } }, severe);
 });
 
