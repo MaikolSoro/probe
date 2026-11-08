@@ -30,6 +30,9 @@ const INJECTION_PATTERNS = [
   [/[A-Za-z0-9+/]{80,}={0,2}/, 'contains a long encoded blob that can hide instructions'],
 ];
 
+const STEERING =
+  /\b((you )?(should|must) always|always) (default to )?(us(e|ing)|call(ing)?|prefer(ring)?) this tool\b|\b(call|use|run) this (tool )?(immediately|first|right after|before any)\b|\b(call|use) this immediately\b|\bthis is the (most powerful|best|only|preferred) [\w\s-]{0,30}tool\b|\b(instead of|rather than|over) (using )?(any |all )?other (\w+ )?tools\b|\bprefer this tool\b/i;
+
 const INVISIBLE_CHARS = /[​-‏‪-‮⁠-⁤﻿]/;
 
 // Returns why a piece of text looks like it carries instructions for the model.
@@ -91,6 +94,21 @@ export function checkTool(tool) {
       owasp: OWASP.LLM01,
       title: 'Invisible Unicode characters in tool metadata',
       detail: 'Zero-width or bidirectional control characters can hide instructions from human reviewers while the model still reads them.',
+      ...where,
+    });
+  }
+
+  // Not an attack, but worth knowing: the server uses its description to steer
+  // which tools the agent picks or what it does next.
+  const steer = STEERING.exec(desc);
+  if (steer) {
+    findings.push({
+      id: 'tool-steering',
+      severity: 'low',
+      owasp: OWASP.LLM01,
+      title: "Tool description steers the agent's choices",
+      detail: `"${tool.name}" tells the agent which tool to prefer or what to do next. It is common and usually harmless, but it shows how text alone redirects an agent.`,
+      evidence: steer[0],
       ...where,
     });
   }

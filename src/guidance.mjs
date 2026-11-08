@@ -342,6 +342,10 @@ const G = {
     en: { title: 'Injected text made the agent use a tool', explain: 'Instructions hidden in content the agent was processing made it call a tool (send email, read files, move money) for the attacker. In production, that action would really happen.', fix: 'Require human approval for sensitive tools, give the agent only the tools it needs, and never let content it reads decide which tools to call.' },
     es: { title: 'Un texto inyectado hizo que el agente usara una herramienta', explain: 'Instrucciones escondidas en el contenido que procesaba el agente lo llevaron a usar una herramienta (enviar correo, leer archivos, mover dinero) a favor del atacante. En producción, esa acción ocurriría de verdad.', fix: 'Exige aprobación humana para herramientas sensibles, dale al agente solo las herramientas que necesita y nunca dejes que el contenido que lee decida qué herramientas usar.' },
   },
+  'tool-steering': {
+    en: { title: "Tool description steers the agent's choices", explain: 'The description tells the agent which tool to prefer or what to call next ("always use this tool", "call this immediately after"). It is usually a product decision, not an attack, but it is the same mechanism an attacker would use.', fix: 'Keep descriptions factual: say what the tool does, not what the agent must do. Decide tool priority in your agent or system prompt, not in third-party descriptions.' },
+    es: { title: 'La descripción de la herramienta dirige las decisiones del agente', explain: 'La descripción le dice al agente qué herramienta preferir o qué llamar después ("siempre usa esta herramienta", "llama a esto inmediatamente después"). Suele ser una decisión del producto, no un ataque, pero es el mismo mecanismo que usaría un atacante.', fix: 'Mantén las descripciones objetivas: que digan qué hace la herramienta, no qué debe hacer el agente. Define la prioridad de herramientas en tu agente o en tu prompt de sistema, no en descripciones de terceros.' },
+  },
   agent: {
     en: {
       title: 'The agent obeys injected instructions',

@@ -104,6 +104,7 @@ probe agent --url http://localhost:8788/chat
 | Tools marked read-only that change state | medium | LLM06 |
 | High-impact tools without `destructiveHint` | low | LLM06 |
 | Free-form `path`, `url`, `command`, `query` parameters | low | LLM06 |
+| Descriptions that steer the agent ("always use this tool", "call this immediately after") | low (informational) | LLM01 |
 
 **Output check** (opt-in, `--call-readonly`). Probe calls only tools that declare `readOnlyHint: true` and take no arguments. It then scans what they return for planted instructions (indirect prompt injection, critical).
 

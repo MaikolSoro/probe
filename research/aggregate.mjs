@@ -3,12 +3,19 @@
 // nothing unpatched is published before the maintainers are told.
 //   node research/aggregate.mjs
 import { readdirSync, readFileSync, writeFileSync } from 'node:fs';
+import { checkTool } from '../src/rules.mjs';
 
 const dir = 'research/results';
 const results = readdirSync(dir)
   .filter((f) => f.endsWith('.json'))
   .map((f) => JSON.parse(readFileSync(`${dir}/${f}`, 'utf8')));
 const ok = results.filter((r) => !r.error);
+// Results saved by older versions lack newer informational rules; recompute those from the stored definitions.
+for (const r of ok) {
+  if (r.definitions && !r.findings.some((f) => f.id === 'tool-steering')) {
+    r.findings.push(...r.definitions.flatMap((d) => checkTool(d)).filter((f) => f.id === 'tool-steering'));
+  }
+}
 const pct = (n, d) => (d ? `${Math.round((n / d) * 100)}%` : '—');
 const has = (r, pred) => r.findings.some(pred);
 
@@ -22,6 +29,7 @@ const rows = [
   ['Tool claims read-only but changes state', ok.filter((r) => has(r, (f) => f.id === 'annotation-mismatch')).length],
   ['High-impact tool without destructiveHint', ok.filter((r) => has(r, (f) => f.id === 'missing-annotations')).length],
   ['Free-form path/url/command/query parameter', ok.filter((r) => has(r, (f) => f.id === 'unconstrained-input')).length],
+  ['Description steers the agent\'s tool choices (informational)', ok.filter((r) => has(r, (f) => f.id === 'tool-steering')).length],
 ];
 const tools = ok.reduce((n, r) => n + r.tools.length, 0);
 

@@ -2,6 +2,11 @@
 
 All notable changes to this project are documented here. Versions follow [Semantic Versioning](https://semver.org).
 
+## [0.6.0] - 2026-11-08
+
+### Added
+- `tool-steering` (low, informational): flags tool descriptions that tell the agent which tool to prefer or what to call next ("you should always default to using this tool", "call this immediately after"). Found in a real public server during the State of MCP Security scan. It is usually a product choice, not an attack, but it is the same mechanism an attacker uses.
+
 ## [0.5.1] - 2026-11-08
 
 ### Fixed
