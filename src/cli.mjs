@@ -1,15 +1,20 @@
 #!/usr/bin/env node
-// avenzoq-probe: security scanner for MCP servers and AI agents.
-import { writeFileSync, mkdirSync } from 'node:fs';
-import { join } from 'node:path';
+// avenzoq-probe: security scanner for MCP servers, AI agents and agent skills.
+import { writeFileSync, mkdirSync, readFileSync } from 'node:fs';
+import { join, dirname } from 'node:path';
+import { fileURLToPath } from 'node:url';
 import { scanMcp } from './mcp-scan.mjs';
 import { scanAgent } from './agent-scan.mjs';
 import { scanSkills } from './skills-scan.mjs';
 import { scanConfigs } from './config-scan.mjs';
-import { printSummary, toMarkdown } from './report.mjs';
+import { printSummary, toMarkdown, ORDER } from './report.mjs';
 import { toHtml, htmlToPdf } from './report-html.mjs';
+import { toSarif } from './sarif.mjs';
+import { loadIgnore, applyIgnore } from './ignore.mjs';
 
-const USAGE = `avenzoq-probe 0.2.0 — security scanner for MCP servers, AI agents and agent skills
+const { version } = JSON.parse(readFileSync(join(dirname(fileURLToPath(import.meta.url)), '..', 'package.json'), 'utf8'));
+
+const USAGE = `avenzoq-probe ${version} — security scanner for MCP servers, AI agents and agent skills
 
 Usage:
   probe mcp [options] -- <command> [args...]   Scan a local (stdio) MCP server
@@ -29,16 +34,26 @@ Agent options:
   --reply <path>      JSON path of the answer, e.g. choices.0.message.content (default: reply)
   --header "K: V"     Extra request header (repeatable)
 
-Common options:
+Reports:
   --out <dir>         Write report.md and report.json to this folder
   --html              Also write a client-ready report.html (implies --out reports/latest)
   --pdf               Also write report.pdf from the HTML (needs Chrome or Chromium)
   --lang <en|es>      Language of the HTML/PDF report (default: en)
   --client <name>     Client name shown on the HTML/PDF report
+  --sarif <file>      Write SARIF 2.1.0 for GitHub code scanning
+  --sarif-uri <path>  File to attach non-file findings to in SARIF (default: the scanned file)
   --json              Print the raw JSON result instead of the summary
 
-Exit code is 1 when there are critical or high findings, so it can run in CI.
+CI:
+  --fail-on <level>   Exit 1 when a finding is at or above: critical, high (default), medium, low, none
+  --ignore <file>     Suppressions file (default: ./.probeignore if present)
+
+  --version           Print the version
+
+Exit codes: 0 = below the --fail-on threshold, 1 = at or above it, 2 = usage or connection error.
 Only scan systems you own or are authorized to test.`;
+
+const FLAGS = { '--json': 'json', '--call-readonly': 'callReadonly', '--html': 'html', '--pdf': 'pdf', '--no-connect': 'noConnect', '--version': 'version' };
 
 function parse(argv) {
   const opts = { headers: {} };
@@ -49,11 +64,7 @@ function parse(argv) {
       rest.push(...argv.slice(i + 1));
       break;
     }
-    if (a === '--json') opts.json = true;
-    else if (a === '--call-readonly') opts.callReadonly = true;
-    else if (a === '--html') opts.html = true;
-    else if (a === '--pdf') opts.pdf = true;
-    else if (a === '--no-connect') opts.noConnect = true;
+    if (FLAGS[a]) opts[FLAGS[a]] = true;
     else if (a === '--header') {
       const [k, ...v] = argv[++i].split(':');
       opts.headers[k.trim()] = v.join(':').trim();
@@ -63,9 +74,22 @@ function parse(argv) {
   return { opts, rest };
 }
 
+function failThreshold(level = 'high') {
+  if (level === 'none') return -1; // no severity index is <= -1, so nothing fails the run
+  const i = ORDER.indexOf(level);
+  if (i === -1) throw new Error(`--fail-on must be one of: ${ORDER.join(', ')}, none`);
+  return i;
+}
+
 async function main() {
-  const [mode, ...argv] = process.argv.slice(2);
-  const { opts, rest } = parse(argv);
+  const argv = process.argv.slice(2);
+  if (argv[0] === '--version' || argv[0] === '-v') {
+    console.log(version);
+    return 0;
+  }
+  const [mode, ...modeArgs] = argv;
+  const { opts, rest } = parse(modeArgs);
+  const threshold = failThreshold(opts['fail-on']);
 
   let scan;
   if (mode === 'mcp' && (opts.url || rest.length)) {
@@ -78,11 +102,19 @@ async function main() {
     scan = await scanAgent({ url: opts.url, field: opts.field, reply: opts.reply, headers: opts.headers });
   } else {
     console.log(USAGE);
-    process.exit(mode ? 2 : 0);
+    return mode ? 2 : 0;
   }
+
+  const { kept, suppressed } = applyIgnore(scan.findings, loadIgnore(opts.ignore));
+  scan.findings = kept;
+  if (suppressed) scan.suppressed = suppressed;
 
   console.log(opts.json ? JSON.stringify(scan, null, 2) : printSummary(scan));
 
+  if (opts.sarif) {
+    writeFileSync(opts.sarif, JSON.stringify(toSarif(scan, { version, anchor: opts['sarif-uri'] }), null, 2));
+    console.log(`SARIF written to ${opts.sarif}`);
+  }
   if ((opts.html || opts.pdf) && !opts.out) opts.out = join('reports', 'latest');
   if (opts.out) {
     mkdirSync(opts.out, { recursive: true });
@@ -101,10 +133,12 @@ async function main() {
     console.log(`\nReports written to ${opts.out}/: ${written.join(', ')}`);
   }
 
-  process.exit(scan.findings.some((f) => f.severity === 'critical' || f.severity === 'high') ? 1 : 0);
+  return scan.findings.some((f) => ORDER.indexOf(f.severity) <= threshold) ? 1 : 0;
 }
 
-main().catch((err) => {
-  console.error(`probe: ${err.message}`);
-  process.exit(2);
-});
+main()
+  .then((code) => process.exit(code))
+  .catch((err) => {
+    console.error(`probe: ${err.message}`);
+    process.exit(2);
+  });

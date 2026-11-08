@@ -1,13 +1,7 @@
 {
-  "name": "avenzoq-probe",
-  "version": "0.2.0",
+  "name": "@avenzoq/probe",
+  "version": "0.3.0",
   "description": "Red-team your AI agents, MCP servers and skills before attackers do: tool poisoning, prompt injection, excessive agency, leaked secrets.",
-  "main": "src/cli.mjs",
-  "scripts": {
-    "test": "node --test test/*.test.mjs",
-    "demo:mcp": "node src/cli.mjs mcp --call-readonly --out reports/demo-mcp -- node examples/vulnerable-mcp-server.mjs",
-    "demo:agent": "node src/cli.mjs agent --url http://localhost:8787/chat --out reports/demo-agent"
-  },
   "keywords": [
     "mcp",
     "model-context-protocol",
@@ -20,30 +14,44 @@
     "claude-code",
     "owasp"
   ],
-  "author": "AVENZOQ",
-  "type": "module",
-  "dependencies": {
-    "@modelcontextprotocol/sdk": "^1.32.2",
-    "zod": "^4.6.7"
-  },
-  "bin": {
-    "probe": "src/cli.mjs"
-  },
-  "engines": {
-    "node": ">=20"
+  "homepage": "https://github.com/MaikolSoro/probe#readme",
+  "bugs": {
+    "url": "https://github.com/MaikolSoro/probe/issues"
   },
   "repository": {
     "type": "git",
     "url": "git+https://github.com/MaikolSoro/probe.git"
   },
-  "homepage": "https://github.com/MaikolSoro/probe#readme",
-  "bugs": {
-    "url": "https://github.com/MaikolSoro/probe/issues"
+  "license": "Apache-2.0",
+  "author": "AVENZOQ",
+  "type": "module",
+  "main": "src/cli.mjs",
+  "bin": {
+    "probe": "src/cli.mjs",
+    "avenzoq-probe": "src/cli.mjs"
   },
   "files": [
     "src",
     "assets",
     "README.md",
-    "SECURITY.md"
-  ]
+    "SECURITY.md",
+    "LICENSE",
+    "NOTICE",
+    "CHANGELOG.md"
+  ],
+  "engines": {
+    "node": ">=20"
+  },
+  "scripts": {
+    "test": "node --test test/*.test.mjs",
+    "demo:mcp": "node src/cli.mjs mcp --call-readonly --out reports/demo-mcp -- node examples/vulnerable-mcp-server.mjs",
+    "demo:agent": "node src/cli.mjs agent --url http://localhost:8787/chat --out reports/demo-agent"
+  },
+  "publishConfig": {
+    "access": "public"
+  },
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "^1.32.2",
+    "zod": "^4.6.7"
+  }
 }

@@ -10,10 +10,12 @@ This project is **separate** from the AVENZOQ website (`../avenqor-web`, its own
 
 ## Status (2026-11-07)
 
-- Version 0.2.0: four modes (`mcp`, `agent`, `config`, `skills`). `npm test` passes, both demos run and HTML/PDF reports (es/en) are verified. Validated on Claude-BugHunter (83 skills): no critical/high/medium findings after tuning false positives.
+- Version 0.3.0: four modes (`mcp`, `agent`, `config`, `skills`), SARIF, `--fail-on`, `.probeignore`, GitHub Action (`action.yml`). `npm test` passes 15/15. Validated on Claude-BugHunter.
 - **GitHub:** https://github.com/MaikolSoro/probe (branch `main`). Not on npm yet.
-- **No license chosen yet.** Apache-2.0 or MIT are the usual choices for adoption. This is the owner's decision, so ask before adding one.
-- Package name `avenzoq-probe`, binary `probe`.
+- **License: Apache-2.0** (`LICENSE`, `NOTICE`). The Geist fonts are under the OFL (`assets/OFL.txt`). The AVENZOQ name and logo are not licensed.
+- **npm:** `@avenzoq/probe`, with the `probe` and `avenzoq-probe` commands. Only the owner can publish (`npm login`, then `npm publish`); the npm org `avenzoq` must exist first.
+- **Releases:** update `CHANGELOG.md`, bump the version in `package.json`, tag `vX.Y.Z` and push the tag. The Action is used as `MaikolSoro/probe@vX.Y.Z`.
+- **CI workflow** `.github/workflows/ci.yml` exists locally but is not pushed: the owner's GitHub token lacks the `workflow` scope.
 
 ## Commands
 
@@ -35,6 +37,9 @@ node src/cli.mjs                           # usage
 | `src/mcp-scan.mjs` | Connects over stdio or Streamable HTTP with `@modelcontextprotocol/sdk`, lists tools, optional read-only output check |
 | `src/config-scan.mjs` | Finds MCP configs (Claude Desktop/Code, Cursor, VS Code, Windsurf), checks secrets, unpinned packages and plain HTTP, then scans each server (`--no-connect` skips starting them) |
 | `src/skills-scan.mjs` | Static scan of skills, slash commands, CLAUDE.md/AGENTS.md, hooks and install scripts; severity drops for commands that only appear in docs or comments |
+| `src/sarif.mjs` | SARIF 2.1.0 output (rules, levels, `security-severity`, file locations) |
+| `src/ignore.mjs` | `.probeignore` parsing and suppression |
+| `action.yml` | Composite GitHub Action (inputs `args`, `fail-on`, `sarif`, `report-dir`) |
 | `src/agent-scan.mjs` | POSTs each probe to a chat endpoint and detects canaries |
 | `src/payloads.mjs` | The prompt-injection probes (id, title, OWASP, `build(canary)`, optional `detect`, `severity`) |
 | `src/report.mjs` | Terminal summary and Markdown report |

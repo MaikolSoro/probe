@@ -7,6 +7,8 @@
   <a href="#what-it-checks"><img alt="OWASP LLM Top 10 2025" src="https://img.shields.io/badge/OWASP-LLM%20Top%2010%202025-f47bff?style=flat-square&labelColor=0b0d10"></a>
   <a href="#mcp-servers"><img alt="MCP" src="https://img.shields.io/badge/MCP-stdio%20%7C%20HTTP-a98bff?style=flat-square&labelColor=0b0d10"></a>
   <a href="#use-it-in-ci"><img alt="CI ready" src="https://img.shields.io/badge/CI-exit%201%20on%20critical-ff4d6d?style=flat-square&labelColor=0b0d10"></a>
+  <a href="LICENSE"><img alt="License Apache-2.0" src="https://img.shields.io/badge/license-Apache--2.0-c9cdd3?style=flat-square&labelColor=0b0d10"></a>
+  <a href="https://www.npmjs.com/package/@avenzoq/probe"><img alt="npm" src="https://img.shields.io/npm/v/@avenzoq/probe?style=flat-square&labelColor=0b0d10&color=8247ff"></a>
   <a href="#client-ready-reports"><img alt="Reports" src="https://img.shields.io/badge/reports-md%20%C2%B7%20json%20%C2%B7%20html%20%C2%B7%20pdf-ff8a3d?style=flat-square&labelColor=0b0d10"></a>
 </p>
 
@@ -42,13 +44,17 @@ Most tooling filters what the **user** types. Probe looks at what the **agent ca
 
 ## Quick start
 
-```bash
-git clone https://github.com/MaikolSoro/probe.git
-cd probe && npm install
-npm link            # optional: makes the `probe` command available everywhere
-```
+No install needed:
 
 ```bash
+npx @avenzoq/probe config                       # audit every MCP server you have configured
+```
+
+Or install it once and use the `probe` command:
+
+```bash
+npm install -g @avenzoq/probe
+
 probe config                                    # audit every MCP server you have configured
 probe mcp -- npx -y some-mcp-server@1.2.3       # scan one MCP server (stdio)
 probe mcp --url https://example.com/mcp         # scan a remote MCP server (Streamable HTTP)
@@ -56,12 +62,26 @@ probe agent --url https://example.com/chat      # throw 9 prompt-injection probe
 probe skills ./some-skill-pack                  # review skills before installing them
 ```
 
+<details>
+<summary>From source</summary>
+
+```bash
+git clone https://github.com/MaikolSoro/probe.git
+cd probe && npm install
+npm link            # or: ln -s "$PWD/src/cli.mjs" ~/.local/bin/probe   (if npm link needs root)
+```
+</details>
+
 Try it on the bundled, deliberately vulnerable demos:
 
 ```bash
 npm run demo:mcp                        # 7 critical · 2 high · 2 medium · 3 low
 node examples/mock-agent.mjs &          # a fake agent that obeys anything
 npm run demo:agent                      # 9 of 9 probes succeed
+
+# Against a real model: a small support bot backed by the Claude API
+ANTHROPIC_API_KEY=… node examples/claude-agent.mjs &
+probe agent --url http://localhost:8788/chat
 ```
 
 > [!IMPORTANT]
@@ -142,12 +162,15 @@ Each report has the overall risk, an executive summary, the scope and method, an
 
 ## Use it in CI
 
-The exit code is `1` when there are critical or high findings, and `2` on errors.
+### GitHub Action
 
 ```yaml
-# .github/workflows/mcp-security.yml
-name: MCP security
-on: [pull_request]
+# .github/workflows/probe.yml
+name: Probe
+on: [pull_request, push]
+permissions:
+  contents: read
+  security-events: write        # to upload SARIF to the Security tab
 jobs:
   probe:
     runs-on: ubuntu-latest
@@ -156,12 +179,43 @@ jobs:
       - uses: actions/setup-node@v4
         with: { node-version: 20 }
       - run: npm ci
-      - run: git clone --depth 1 https://github.com/MaikolSoro/probe.git /tmp/probe && npm --prefix /tmp/probe ci
-      - run: node /tmp/probe/src/cli.mjs mcp --out probe-report -- node ./server.js
-      - uses: actions/upload-artifact@v4
+      - uses: MaikolSoro/probe@v0.3.0
+        with:
+          args: mcp -- node ./server.js     # or: skills ./skills · config --path .mcp.json --no-connect
+          fail-on: high
+      - uses: github/codeql-action/upload-sarif@v3
         if: always()
-        with: { name: probe-report, path: probe-report }
+        with: { sarif_file: probe.sarif }
 ```
+
+Findings show up in **Security → Code scanning**, with severity, the OWASP category and how to fix each one.
+
+### Any CI
+
+```bash
+npx @avenzoq/probe mcp --fail-on high --sarif probe.sarif --out probe-report -- node ./server.js
+```
+
+| Option | What it does |
+|---|---|
+| `--fail-on <level>` | Exit `1` at or above `critical`, `high` (default), `medium` or `low`; `none` never fails |
+| `--sarif <file>` | SARIF 2.1.0 for GitHub code scanning or any SARIF viewer |
+| `--ignore <file>` | Suppressions file; `./.probeignore` is used automatically if present |
+
+Exit codes: `0` below the threshold, `1` at or above it, `2` on usage or connection errors.
+
+### Suppressing findings
+
+Some findings are expected, for example a tool that really must send email. List them in `.probeignore`:
+
+```gitignore
+# <rule-id> [where]   (both accept * wildcards)
+capability-outbound send_email        # sends only to allowlisted domains, with approval
+skill-pipe-to-shell docs/*            # install instructions for humans
+config-unpinned-package *
+```
+
+Suppressed findings are counted in the summary, so nothing disappears silently.
 
 ## How it works
 
@@ -189,11 +243,16 @@ Everything is plain Node.js ESM, with no build step. The only dependencies are t
 
 - [ ] Multi-turn and tool-use probes against agent frameworks
 - [ ] Rug-pull detection (tool definitions that change between scans)
-- [ ] SARIF output for GitHub code scanning
-- [ ] `.probeignore` and per-rule severity overrides
+- [x] SARIF output and GitHub Action
+- [x] `.probeignore` and `--fail-on`
+- [ ] LLM judge (`--llm`) to confirm or dismiss pattern matches
 - [ ] **Guard:** a runtime policy firewall between agents and their tools
 
 See [docs/ROADMAP.md](docs/ROADMAP.md).
+
+## License
+
+[Apache-2.0](LICENSE). The bundled Geist fonts are under the [SIL Open Font License 1.1](assets/OFL.txt). The AVENZOQ name and logo are trademarks and are not covered by the license (see [NOTICE](NOTICE)).
 
 ## Contributing and security
 

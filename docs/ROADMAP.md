@@ -24,14 +24,18 @@
 - Per-call timeout, so a hung server cannot block a scan.
 - README with banner, animated terminal SVG and report preview; SECURITY, CONTRIBUTING and CI workflow.
 
+## Done (v0.3.0, 2026-11-08): Sprint 1, launch-ready
+
+- Apache-2.0 license, NOTICE and font license; CHANGELOG; npm package `@avenzoq/probe`.
+- SARIF output, `--fail-on`, `.probeignore`, `--version`.
+- GitHub Action (`action.yml`), tested locally by running its script.
+
 ## Next (to make it useful for real users)
 
-1. **Publish:** choose a license, create the GitHub repo, write a CONTRIBUTING file and set up a CI workflow that runs `npm test`.
-2. **SARIF output** for GitHub code scanning. Results need a file location, so anchor them to the MCP config file or to the server's entry point.
-3. **Multi-turn and tool-use probes:** support chat endpoints that take a message history, and agents that call tools. Detect whether an injected instruction leads to a tool call, not just to a canary echo.
-4. **Rug-pull detection:** save a hash of each server's tool definitions and warn when they change between scans.
-5. **Probe pack in Spanish and Portuguese**, for the Latin American market and as a differentiator.
-6. **Reduce false positives:** an allowlist or suppression file (`.probeignore`) and per-rule severity overrides.
+1. **LLM judge (`--llm`, opt-in):** Claude confirms or dismisses pattern matches in descriptions, tool output and skills, which cuts false positives and catches paraphrased attacks.
+2. **Multi-turn and tool-use probes:** support chat endpoints that take a message history, and agents that call tools. Detect whether an injected instruction leads to a tool call, not just to a canary echo.
+3. **Rug-pull detection:** save a hash of each server's tool definitions and warn when they change between scans.
+4. **Probe pack in Spanish and Portuguese**, for the Latin American market and as a differentiator.
 
 ## Later (product)
 

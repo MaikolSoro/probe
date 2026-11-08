@@ -1,0 +1,49 @@
+name: AVENZOQ Probe
+description: Scan MCP servers, AI agents and agent skills for tool poisoning, prompt injection and excessive agency.
+author: AVENZOQ
+branding:
+  icon: shield
+  color: purple
+
+inputs:
+  args:
+    description: 'Probe arguments, for example: mcp -- node ./server.js · skills ./skills · config --path .mcp.json --no-connect'
+    required: true
+  fail-on:
+    description: Fail the step at or above this severity (critical, high, medium, low, none)
+    default: high
+  sarif:
+    description: Path of the SARIF file to write (upload it with github/codeql-action/upload-sarif)
+    default: probe.sarif
+  report-dir:
+    description: Folder for report.md and report.json (empty to skip)
+    default: probe-report
+
+outputs:
+  sarif:
+    description: Path of the SARIF file
+    value: ${{ inputs.sarif }}
+
+runs:
+  using: composite
+  steps:
+    - uses: actions/setup-node@v4
+      with:
+        node-version: 20
+    - name: Install Probe
+      shell: bash
+      run: npm ci --omit=dev --prefix "$GITHUB_ACTION_PATH"
+    - name: Run Probe
+      shell: bash
+      env:
+        PROBE_ARGS: ${{ inputs.args }}
+        PROBE_FAIL_ON: ${{ inputs.fail-on }}
+        PROBE_SARIF: ${{ inputs.sarif }}
+        PROBE_OUT: ${{ inputs.report-dir }}
+      run: |
+        # Options go before "--" so they are not passed to the scanned server's command.
+        read -r -a args <<< "$PROBE_ARGS"
+        opts=(--fail-on "$PROBE_FAIL_ON" --sarif "$PROBE_SARIF")
+        [ -n "$PROBE_OUT" ] && opts+=(--out "$PROBE_OUT")
+        mode="${args[0]}"
+        node "$GITHUB_ACTION_PATH/src/cli.mjs" "$mode" "${opts[@]}" "${args[@]:1}"

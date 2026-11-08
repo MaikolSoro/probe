@@ -38,6 +38,7 @@ export function printSummary(scan, { color = process.stdout.isTTY } = {}) {
     lines.push(`${paint(f.severity, f.severity.toUpperCase().padEnd(8))} ${f.tool.padEnd(22)} ${f.title}`);
   }
   if (!scan.findings.length) lines.push('No findings.');
+  if (scan.suppressed) lines.push(`(${scan.suppressed} suppressed by .probeignore)`);
   const c = counts(scan.findings);
   lines.push('', ORDER.map((s) => `${s}: ${c[s]}`).join(' · '));
   return lines.join('\n');
