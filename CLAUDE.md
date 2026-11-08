@@ -1,6 +1,6 @@
 # CLAUDE.md: AVENZOQ Probe
 
-Context for any Claude session that works on this project. Read this first, then `docs/STRATEGY.md` for the business side and `docs/ROADMAP.md` for what to build next.
+Context for any Claude session that works on this project. Read this first, then `docs/ROADMAP.md` for what to build next.
 
 ## What this is
 
@@ -15,7 +15,6 @@ This project is **separate** from the AVENZOQ website (`../avenqor-web`, its own
 - **License: Apache-2.0** (`LICENSE`, `NOTICE`). The Geist fonts are under the OFL (`assets/OFL.txt`). The AVENZOQ name and logo are not licensed.
 - **npm:** `@avenzoq/probe`, with the `probe` and `avenzoq-probe` commands. Only the owner can publish (`npm login`, then `npm publish`); the npm org `avenzoq` must exist first.
 - **Releases:** update `CHANGELOG.md`, bump the version in `package.json`, tag `vX.Y.Z` and push the tag. The Action is used as `MaikolSoro/probe@vX.Y.Z`.
-- **CI workflow** `.github/workflows/ci.yml` exists locally but is not pushed: the owner's GitHub token lacks the `workflow` scope.
 
 ## Commands
 
@@ -52,7 +51,7 @@ node src/cli.mjs                           # usage
 | `test/` | `node:test` unit tests for the rules |
 | `bench/` | `cases.mjs` (labeled corpus) and `run.mjs` (precision/recall/F1, `--llm`, `--write` → RESULTS.md). When you change rules, run `npm run bench` and keep F1 ≥ 85 % (enforced by `test/bench.test.mjs`). Add a benign near-miss for every new rule |
 | `research/` | State of MCP Security kit: `Dockerfile` (locked-down runner), `run.mjs`, `aggregate.mjs` (public aggregate + private per-server table), methodology and disclosure template. `research/results/` is git-ignored: **never publish server names before disclosure** |
-| `docs/` | Strategy and roadmap; `docs/assets/` holds the README banner, the animated terminal SVG and the report preview |
+| `docs/` | Roadmap; `docs/assets/` holds the README banner, the animated terminal SVG and the report preview |
 | `scripts/readme-assets.mjs` | Regenerates `banner.svg` and `terminal.svg`. Update the numbers in it when checks change |
 | `.github/workflows/ci.yml` | Tests on Node 20/22/24, plus the demo scan |
 | `SECURITY.md`, `CONTRIBUTING.md` | Policies for reporting issues and adding rules |
