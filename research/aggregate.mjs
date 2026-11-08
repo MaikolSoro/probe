@@ -1,9 +1,13 @@
 // Turns research/results/*.json into a draft report. The public draft only
 // contains aggregate numbers; the per-server table goes to a private file so
 // nothing unpatched is published before the maintainers are told.
-//   node research/aggregate.mjs
-import { readdirSync, readFileSync, writeFileSync } from 'node:fs';
+//   node research/aggregate.mjs [--final]
+// Writes research/report/state-of-mcp-security.{en,es}.{md,html,pdf}; drafts are
+// watermarked until --final.
+import { readdirSync, readFileSync, writeFileSync, mkdirSync, existsSync } from 'node:fs';
 import { checkTool } from '../src/rules.mjs';
+import { htmlToPdf } from '../src/report-html.mjs';
+import { renderMd, renderHtml } from './report.mjs';
 
 const dir = 'research/results';
 const results = readdirSync(dir)
@@ -32,6 +36,32 @@ const rows = [
   ['Description steers the agent\'s tool choices (informational)', ok.filter((r) => has(r, (f) => f.id === 'tool-steering')).length],
 ];
 const tools = ok.reduce((n, r) => n + r.tools.length, 0);
+
+// Numbers for the public report.
+const scanDate = results.map((r) => r.scannedAt).filter(Boolean).sort().at(-1) ?? new Date().toISOString();
+const benchTotal = existsSync('bench/RESULTS.md') ? readFileSync('bench/RESULTS.md', 'utf8').split('\n').find((l) => l.startsWith('| Total')) : null;
+const stats = {
+  targets: results.length,
+  started: ok.length,
+  tools,
+  version: JSON.parse(readFileSync('package.json', 'utf8')).version,
+  f1: benchTotal ? benchTotal.split('|').at(-2).trim() : 'n/a',
+  n: (id) => ok.filter((r) => has(r, (f) => (id === 'attack' ? ATTACK_IDS.has(f.id) : f.id === id))).length,
+};
+const draft = !process.argv.includes('--final');
+mkdirSync('research/report', { recursive: true });
+for (const lang of ['en', 'es']) {
+  const d = new Date(scanDate);
+  const s = {
+    ...stats,
+    date: d.toLocaleDateString(lang === 'es' ? 'es-CR' : 'en-US', { day: 'numeric', month: 'long', year: 'numeric' }),
+    month: d.toLocaleDateString(lang === 'es' ? 'es-CR' : 'en-US', { month: 'long', year: 'numeric' }),
+  };
+  const base = `research/report/state-of-mcp-security.${lang}`;
+  writeFileSync(`${base}.md`, renderMd(s, lang, { draft }));
+  writeFileSync(`${base}.html`, renderHtml(s, lang, { draft }));
+  htmlToPdf(`${base}.html`, `${base}.pdf`);
+}
 
 const today = new Date().toISOString().slice(0, 10);
 const md = [
@@ -64,3 +94,4 @@ writeFileSync(
 );
 console.log(md);
 console.log(`\nPrivate per-server table: ${dir}/PRIVATE-by-server.md`);
+console.log(`Public report (${draft ? 'DRAFT' : 'final'}): research/report/state-of-mcp-security.{en,es}.{md,pdf}`);

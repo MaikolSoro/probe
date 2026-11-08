@@ -21,8 +21,9 @@ Tools and rules for scanning public MCP servers at scale and publishing the resu
 ```bash
 # Docker Desktop must be running
 node research/run.mjs                 # scans research/targets.txt → research/results/*.json
-node research/aggregate.mjs           # → research/REPORT-draft.md (aggregate only)
+node research/aggregate.mjs           # → research/report/state-of-mcp-security.{en,es}.{md,pdf}  (DRAFT watermark)
                                       #   + research/results/PRIVATE-by-server.md (never published)
+node research/aggregate.mjs --final   # same report without the draft watermark, once approved
 ```
 
 `research/results/` is git-ignored on purpose.
