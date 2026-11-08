@@ -13,6 +13,7 @@
 - Opt-in output check (`--call-readonly`) for indirect injection planted in read-only tool output.
 - Agent scan: 9 canary probes over a JSON HTTP endpoint, with a configurable message field, reply path and headers.
 - Markdown and JSON reports; CI-friendly exit codes.
+- Client-ready HTML/PDF report (`--html`, `--pdf`, `--lang es|en`, `--client`), with an executive summary, grouped issues and fixes in plain language. Used to deliver AVENZOQ AI-security audits.
 - Vulnerable demo MCP server, mock agent and unit tests.
 
 ## Next (to make it useful for real users)

@@ -5,6 +5,7 @@ import { join } from 'node:path';
 import { scanMcp } from './mcp-scan.mjs';
 import { scanAgent } from './agent-scan.mjs';
 import { printSummary, toMarkdown } from './report.mjs';
+import { toHtml, htmlToPdf } from './report-html.mjs';
 
 const USAGE = `avenzoq-probe 0.1.0 — security scanner for MCP servers and AI agents
 
@@ -24,6 +25,10 @@ Agent options:
 
 Common options:
   --out <dir>         Write report.md and report.json to this folder
+  --html              Also write a client-ready report.html (implies --out reports/latest)
+  --pdf               Also write report.pdf from the HTML (needs Chrome or Chromium)
+  --lang <en|es>      Language of the HTML/PDF report (default: en)
+  --client <name>     Client name shown on the HTML/PDF report
   --json              Print the raw JSON result instead of the summary
 
 Exit code is 1 when there are critical or high findings, so it can run in CI.
@@ -40,6 +45,8 @@ function parse(argv) {
     }
     if (a === '--json') opts.json = true;
     else if (a === '--call-readonly') opts.callReadonly = true;
+    else if (a === '--html') opts.html = true;
+    else if (a === '--pdf') opts.pdf = true;
     else if (a === '--header') {
       const [k, ...v] = argv[++i].split(':');
       opts.headers[k.trim()] = v.join(':').trim();
@@ -65,11 +72,22 @@ async function main() {
 
   console.log(opts.json ? JSON.stringify(scan, null, 2) : printSummary(scan));
 
+  if ((opts.html || opts.pdf) && !opts.out) opts.out = join('reports', 'latest');
   if (opts.out) {
     mkdirSync(opts.out, { recursive: true });
     writeFileSync(join(opts.out, 'report.md'), toMarkdown(scan));
     writeFileSync(join(opts.out, 'report.json'), JSON.stringify(scan, null, 2));
-    console.log(`\nReport written to ${opts.out}/report.md`);
+    const written = ['report.md', 'report.json'];
+    if (opts.html || opts.pdf) {
+      const htmlPath = join(opts.out, 'report.html');
+      writeFileSync(htmlPath, toHtml(scan, { lang: opts.lang, client: opts.client }));
+      written.push('report.html');
+      if (opts.pdf) {
+        htmlToPdf(htmlPath, join(opts.out, 'report.pdf'));
+        written.push('report.pdf');
+      }
+    }
+    console.log(`\nReports written to ${opts.out}/: ${written.join(', ')}`);
   }
 
   process.exit(scan.findings.some((f) => f.severity === 'critical' || f.severity === 'high') ? 1 : 0);

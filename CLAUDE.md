@@ -10,7 +10,7 @@ This project is **separate** from the AVENZOQ website (`../avenqor-web`, its own
 
 ## Status (2026-11-07)
 
-- Version 0.1.0, working and tested locally (`npm test`: 6/6 pass; both demos run).
+- Version 0.1.0, working and tested locally (`npm test`: 6/6 pass; both demos run; HTML/PDF reports in es/en verified).
 - **Not published:** no GitHub repo and no npm package yet.
 - **No license chosen yet.** Apache-2.0 or MIT are the usual choices for adoption. This is the owner's decision, so ask before adding one.
 - Package name `avenzoq-probe`, binary `probe`.
@@ -36,6 +36,9 @@ node src/cli.mjs                           # usage
 | `src/agent-scan.mjs` | POSTs each probe to a chat endpoint and detects canaries |
 | `src/payloads.mjs` | The prompt-injection probes (id, title, OWASP, `build(canary)`, optional `detect`, `severity`) |
 | `src/report.mjs` | Terminal summary and Markdown report |
+| `src/report-html.mjs` | Client-facing HTML report (es/en, AVENZOQ branding, fonts embedded from `assets/`) and PDF via headless Chrome |
+| `src/guidance.mjs` | Plain-language "what it means / how to fix it" per finding id, in English and Spanish. **Add an entry here for every new rule or probe** |
+| `assets/` | Geist fonts and the AVENZOQ mark used by the HTML report |
 | `examples/` | Deliberately vulnerable MCP server and a mock agent that obeys anything. Both are fake and do nothing real |
 | `test/` | `node:test` unit tests for the rules |
 | `docs/` | Strategy and roadmap |

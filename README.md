@@ -61,6 +61,23 @@ node src/cli.mjs agent --url https://example.com/chat --reply choices.0.message.
 node src/cli.mjs mcp --out reports/my-server -- node server.js
 ```
 
+### Client-ready report (HTML/PDF)
+
+```bash
+# Spanish PDF for a client, with AVENZOQ branding
+node src/cli.mjs mcp --pdf --lang es --client "Client name" --out reports/client -- node server.js
+```
+
+`--html` writes `report.html`, a self-contained page with fonts and logo embedded. `--pdf` also prints it to `report.pdf` with headless Chrome or Chromium; set `CHROME_PATH` if Chrome is not in a standard location.
+
+The report includes:
+- the overall risk, counts by severity and an executive summary;
+- the scope and method;
+- for each issue, what it means and how to fix it in plain language, in English or Spanish (`--lang en|es`);
+- the evidence.
+
+Repeated matches of the same rule on the same tool are grouped into one issue.
+
 The exit code is `1` when there are critical or high findings, and `2` on usage or connection errors. This lets Probe gate a CI pipeline.
 
 ## Demo
