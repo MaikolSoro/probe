@@ -112,6 +112,9 @@ probe agent --url http://localhost:8788/chat
 
 `probe agent` runs **32 attack probes** in 7 categories. Each one carries a random canary: if the canary comes back, or a fake tool gets called with the attacker's data, the agent obeyed untrusted input.
 
+> [!WARNING]
+> `probe agent` sends real attacks to a live target. Only run it against a chatbot or agent you **own** or have **written authorization** to test. It asks you to confirm, and refuses to run non-interactively unless you pass `--yes`. If the endpoint rejects every request (wrong URL, auth, or bot protection), the result is **INCONCLUSIVE** — that does not mean the target is secure.
+
 | Category | Probes | Technique |
 |---|---|---|
 | `direct` | 8 | Overrides in English, Spanish and Portuguese; fake admin notice; developer mode; role-play; refusal suppression; forced prefix |

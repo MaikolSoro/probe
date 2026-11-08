@@ -96,3 +96,39 @@ test('json target skips multi-turn and tool-use probes unless supported', async 
   const scan = await scanAgent({ url: 'http://127.0.0.1:9/never', categories: 'multi-turn,tool-use' });
   assert.ok(scan.results.every((r) => r.status === 'skipped'));
 });
+
+test('agent scan is marked inconclusive when every request fails (e.g. 403)', async () => {
+  const server = createServer((req, res) => {
+    res.writeHead(403, { 'content-type': 'application/json' });
+    res.end(JSON.stringify({ error: { message: 'Forbidden' } }));
+  });
+  await new Promise((r) => server.listen(0, r));
+  try {
+    const url = `http://127.0.0.1:${server.address().port}/api/chat`;
+    const scan = await scanAgent({ url, categories: 'direct' });
+    assert.ok(scan.inconclusive, 'expected an inconclusive message');
+    assert.match(scan.inconclusive, /403|reject|credential/i);
+    assert.equal(scan.findings.length, 0);
+    assert.ok(scan.results.every((r) => r.status === 'error' || r.status === 'skipped'));
+  } finally {
+    server.close();
+  }
+});
+
+test('a working target is not marked inconclusive', async () => {
+  const server = createServer((req, res) => {
+    let body = '';
+    req.on('data', (c) => (body += c));
+    req.on('end', () => {
+      res.writeHead(200, { 'content-type': 'application/json' });
+      res.end(JSON.stringify({ reply: 'Hello, how can I help with your order?' }));
+    });
+  });
+  await new Promise((r) => server.listen(0, r));
+  try {
+    const scan = await scanAgent({ url: `http://127.0.0.1:${server.address().port}/chat`, categories: 'direct' });
+    assert.equal(scan.inconclusive, null);
+  } finally {
+    server.close();
+  }
+});

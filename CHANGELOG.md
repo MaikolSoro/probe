@@ -2,6 +2,14 @@
 
 All notable changes to this project are documented here. Versions follow [Semantic Versioning](https://semver.org).
 
+## [0.6.3] - 2026-11-08
+
+### Added
+- `probe agent` now asks you to confirm you are authorized to test the target. In a non-interactive run (CI, piped) it refuses unless you pass `--yes`. Testing a system you don't own, without written permission, may be illegal.
+
+### Changed
+- When every probe fails (403, 404, wrong format, endpoint down), the result is reported as **INCONCLUSIVE** with a specific hint, and the exit code is 2. Before, a target that could not be reached looked like a clean "No findings". The HTML/PDF and Markdown reports carry the same warning.
+
 ## [0.6.2] - 2026-11-08
 
 ### Fixed

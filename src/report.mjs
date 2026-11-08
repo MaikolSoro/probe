@@ -42,6 +42,12 @@ export function printSummary(scan, { color = process.stdout.isTTY } = {}) {
     const judged = f.llm ? ` [llm ${f.llm.split(':')[0]}]` : '';
     lines.push(`${paint(f.severity, f.severity.toUpperCase().padEnd(8))} ${f.tool.padEnd(22)} ${f.title}${judged}`);
   }
+  // An inconclusive scan never ran, so "No findings" would be misleading.
+  if (scan.inconclusive) {
+    const warn = color ? `\x1b[33m${scan.inconclusive}${RESET}` : scan.inconclusive;
+    lines.push(`⚠ INCONCLUSIVE — ${warn}`);
+    return lines.join('\n');
+  }
   if (!scan.findings.length) lines.push('No findings.');
   if (scan.suppressed) lines.push(`(${scan.suppressed} suppressed by .probeignore)`);
   const c = counts(scan.findings);
@@ -60,6 +66,7 @@ export function toMarkdown(scan, date = new Date()) {
   ];
   if (scan.server) out.push(`- **Server:** ${scan.server} · tools: ${scan.tools.map((t) => `\`${t}\``).join(', ')}`);
   if (scan.called) out.push(`- **Read-only tools called:** ${scan.called.length ? scan.called.map((c) => `\`${c.tool}\` (${c.status})`).join(', ') : 'none'}`);
+  if (scan.inconclusive) out.push('', `> ⚠️ **Inconclusive scan.** ${scan.inconclusive} These results do not mean the target is secure.`, '');
   out.push('', '## Summary', '', '| Critical | High | Medium | Low |', '|---|---|---|---|', `| ${c.critical} | ${c.high} | ${c.medium} | ${c.low} |`, '');
 
   if (scan.kind === 'skills') out.push(`Files scanned: ${scan.files} (${scan.skills} skills). External domains referenced: ${scan.domains.join(', ') || 'none'}.`, '');

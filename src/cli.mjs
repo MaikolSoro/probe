@@ -14,6 +14,7 @@ import { loadIgnore, applyIgnore } from './ignore.mjs';
 import { readPins, writePins } from './pins.mjs';
 import { DEFAULT_MODEL } from './llm.mjs';
 import { judgeSkills } from './skills-scan.mjs';
+import { createInterface } from 'node:readline';
 
 const { version } = JSON.parse(readFileSync(join(dirname(fileURLToPath(import.meta.url)), '..', 'package.json'), 'utf8'));
 
@@ -48,6 +49,7 @@ Agent options:
   --history-field <n> Send the whole conversation in this JSON field (enables multi-turn probes)
   --header "K: V"     Extra request header (repeatable)
   --categories <list> Only run these: direct,indirect,obfuscation,exfiltration,leak,multi-turn,tool-use
+  --yes               Confirm you are authorized to test the target (required when not interactive)
 
 Reports:
   --out <dir>         Write report.md and report.json to this folder
@@ -69,7 +71,30 @@ CI:
 Exit codes: 0 = below the --fail-on threshold, 1 = at or above it, 2 = usage or connection error.
 Only scan systems you own or are authorized to test.`;
 
-const FLAGS = { '--json': 'json', '--call-readonly': 'callReadonly', '--html': 'html', '--pdf': 'pdf', '--no-connect': 'noConnect', '--version': 'version', '--llm': 'llm', '--update-pins': 'updatePins' };
+const FLAGS = { '--json': 'json', '--call-readonly': 'callReadonly', '--html': 'html', '--pdf': 'pdf', '--no-connect': 'noConnect', '--version': 'version', '--llm': 'llm', '--update-pins': 'updatePins', '--yes': 'yes' };
+
+// `probe agent` actively attacks a live target. Testing a system you do not own
+// or control, without written authorization, is illegal in most countries. This
+// gate makes the user confirm, and blocks non-interactive runs that did not pass --yes.
+async function confirmAuthorization(opts) {
+  if (opts.yes) return;
+  const where = opts.url ?? `${opts.target} API`;
+  if (!process.stdin.isTTY || !process.stdout.isTTY) {
+    throw new Error(
+      `refusing to attack ${where} without confirmation. Only test systems you own or are authorized to test, ` +
+        `then pass --yes. Sending these probes to someone else's service without written permission may be illegal.`,
+    );
+  }
+  console.log(
+    `\n⚠  'probe agent' will send prompt-injection attacks to:\n   ${where}\n\n` +
+      `Only do this on a system you OWN or have WRITTEN AUTHORIZATION to test.\n` +
+      `Testing someone else's service without permission may be illegal.\n`,
+  );
+  const rl = createInterface({ input: process.stdin, output: process.stdout });
+  const answer = await new Promise((resolve) => rl.question('Do you confirm you are authorized to test this target? (yes/no) ', resolve));
+  rl.close();
+  if (!/^(y|yes|s|si|sí)$/i.test(answer.trim())) throw new Error('not confirmed — scan cancelled.');
+}
 
 function parse(argv) {
   const opts = { headers: {} };
@@ -122,6 +147,7 @@ async function main() {
     if (llm) scan = await judgeSkills(scan, llm);
   } else if (mode === 'agent' && (opts.url || opts.target === 'openai' || opts.target === 'anthropic')) {
     if (opts.target && opts.target !== 'json' && !opts.model) throw new Error('--target openai/anthropic needs --model');
+    await confirmAuthorization(opts);
     scan = await scanAgent({
       target: opts.target,
       url: opts.url,
@@ -168,6 +194,8 @@ async function main() {
     console.log(`\nReports written to ${opts.out}/: ${written.join(', ')}`);
   }
 
+  // An inconclusive scan did not actually test anything: exit 2 so CI never reads it as a pass.
+  if (scan.inconclusive) return 2;
   return scan.findings.some((f) => ORDER.indexOf(f.severity) <= threshold) ? 1 : 0;
 }
 
