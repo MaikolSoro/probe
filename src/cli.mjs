@@ -14,6 +14,8 @@ import { loadIgnore, applyIgnore } from './ignore.mjs';
 import { readPins, writePins } from './pins.mjs';
 import { DEFAULT_MODEL } from './llm.mjs';
 import { judgeSkills } from './skills-scan.mjs';
+import { diffScans, printDiff, diffToMarkdown } from './diff.mjs';
+import { authorizationMarkdown, authorizationHtml } from './authorization.mjs';
 import { createInterface } from 'node:readline';
 
 const { version } = JSON.parse(readFileSync(join(dirname(fileURLToPath(import.meta.url)), '..', 'package.json'), 'utf8'));
@@ -31,6 +33,8 @@ Usage:
                                                hooks and install scripts before you install them
   probe serve                                  Run Probe as an MCP server (stdio) so an AI client
                                                can scan servers, configs and skills on request
+  probe diff <before.json> <after.json>        Compare two report.json files (resolved / new / still there)
+  probe authorization [options]                Print the "authorization to test" document a client signs
 
 MCP and config options:
   --call-readonly     Also call tools marked read-only that take no arguments and
@@ -52,6 +56,12 @@ Agent options:
   --header "K: V"     Extra request header (repeatable)
   --categories <list> Only run these: direct,indirect,obfuscation,exfiltration,leak,multi-turn,tool-use
   --yes               Confirm you are authorized to test the target (required when not interactive)
+
+Authorization document options:
+  --client <name>     Client organization        --authby <name>  Person who authorizes
+  --role <title>      Their role                 --scope "a, b"   Systems in scope (comma/newline list)
+  --exclude "x, y"    Systems out of scope       --start / --end  Testing window
+  (prints Markdown; with --out <dir> writes authorization.md, plus --html / --pdf for the branded version)
 
 Reports:
   --out <dir>         Write report.md and report.json to this folder
@@ -142,6 +152,50 @@ async function main() {
 
   const { opts, rest } = parse(modeArgs);
   const threshold = failThreshold(opts['fail-on']);
+
+  // `probe diff before.json after.json` compares two report.json files to show what
+  // a fix changed. It reads results, it does not scan.
+  if (mode === 'diff') {
+    if (rest.length < 2) {
+      console.log(USAGE);
+      return 2;
+    }
+    const before = JSON.parse(readFileSync(rest[0], 'utf8'));
+    const after = JSON.parse(readFileSync(rest[1], 'utf8'));
+    const d = diffScans(before, after);
+    console.log(opts.json ? JSON.stringify(d, null, 2) : printDiff(d));
+    if (opts.out) {
+      mkdirSync(opts.out, { recursive: true });
+      writeFileSync(join(opts.out, 'diff.md'), diffToMarkdown(d));
+      console.log(`\nWritten to ${opts.out}/diff.md`);
+    }
+    return d.added.some((f) => ORDER.indexOf(f.severity) <= threshold) ? 1 : 0;
+  }
+
+  // `probe authorization` prints the "authorization to test" document a client signs
+  // before an assessment. Fields left out stay as blanks to fill in.
+  if (mode === 'authorization' || mode === 'authz') {
+    const lang = opts.lang === 'en' ? 'en' : 'es';
+    const md = authorizationMarkdown(opts, lang);
+    if (opts.out) {
+      mkdirSync(opts.out, { recursive: true });
+      writeFileSync(join(opts.out, 'authorization.md'), md);
+      const written = ['authorization.md'];
+      if (opts.html || opts.pdf) {
+        const htmlPath = join(opts.out, 'authorization.html');
+        writeFileSync(htmlPath, authorizationHtml(opts, lang));
+        written.push('authorization.html');
+        if (opts.pdf) {
+          htmlToPdf(htmlPath, join(opts.out, 'authorization.pdf'));
+          written.push('authorization.pdf');
+        }
+      }
+      console.log(`Written to ${opts.out}/: ${written.join(', ')}`);
+    } else {
+      console.log(md);
+    }
+    return 0;
+  }
 
   const timeoutMs = opts.timeout ? Number(opts.timeout) * 1000 : undefined;
   const llm = opts.llm ? { model: opts['llm-model'] ?? DEFAULT_MODEL } : undefined;

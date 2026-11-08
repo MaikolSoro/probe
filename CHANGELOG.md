@@ -2,6 +2,12 @@
 
 All notable changes to this project are documented here. Versions follow [Semantic Versioning](https://semver.org).
 
+## [0.8.0] - 2026-11-08
+
+### Added
+- **`probe diff <before.json> <after.json>`:** compare two scans and show what a fix changed — findings resolved, newly introduced, and still present — with before/after counts. Proof of value for a client: "before, 5 risks; after, 0". Exit 1 if a new finding is at or above `--fail-on`.
+- **`probe authorization`:** print the "authorization to test" document a client signs before an assessment (scope, out-of-scope, testing window, terms, signatures), in Spanish or English. `--out <dir>` writes `authorization.md`; `--html`/`--pdf` add the AVENZOQ-branded version. It is a template, not legal advice.
+
 ## [0.7.0] - 2026-11-07
 
 ### Added

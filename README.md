@@ -224,6 +224,30 @@ probe mcp --pdf --lang es --client "Cliente S.A." --out reports/cliente -- node 
 
 Each report opens with the overall risk and an **executive summary for decision makers** — the single most important risk, a rough remediation effort and the recommended next step — then the scope and method, and every issue with **what it means** and **how to fix it** in plain language.
 
+### Before/after (`probe diff`)
+
+Run two scans with `--out` and compare their `report.json` to show what a fix changed:
+
+```bash
+probe mcp --out before -- node server.js      # scan, then fix the issues
+probe mcp --out after  -- node server.js       # scan again
+probe diff before/report.json after/report.json   # resolved / new / still present
+```
+
+Exit code 1 if a **new** finding appears at or above `--fail-on`. Add `--out <dir>` to also write `diff.md`.
+
+### Authorization document (`probe authorization`)
+
+Start every engagement with written permission. `probe authorization` prints the document a client signs — scope, out-of-scope, testing window, terms and signatures — in Spanish or English:
+
+```bash
+probe authorization --client "Cliente S.A." --authby "Jane Doe" --role CTO \
+  --scope "https://api.client.com/chat, inventory MCP server" --exclude "production" \
+  --start 2026-11-10 --end 2026-11-14 --pdf --out ./engagement
+```
+
+Fields you leave out stay as blanks to fill in. It is a template, not legal advice — have a lawyer review it.
+
 ## Use it in CI
 
 ### GitHub Action

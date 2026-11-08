@@ -51,6 +51,11 @@
 - `probe serve`: Probe as a stdio MCP server, so an AI client can run the read-only scans itself (`scan_mcp_server`, `scan_mcp_config`, `scan_skills`). The active `agent` attack is intentionally not exposed.
 - Executive-summary block at the top of the client report (top risk, estimated effort, next step; es/en).
 
+## Done (v0.8.0, 2026-11-08): selling the audits
+
+- `probe diff <before.json> <after.json>`: resolved / new / still-present, with before/after counts — proof of value for a client.
+- `probe authorization`: the signable "authorization to test" document (es/en), Markdown + branded HTML/PDF. A template, not legal advice.
+
 ## Next (to make it useful for real users)
 
 1. **Run the State of MCP Security study:** start Docker, run `research/run.mjs`, review the criticals by hand, disclose, then publish the aggregate report.
