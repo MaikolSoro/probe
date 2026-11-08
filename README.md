@@ -76,7 +76,7 @@ npm link            # or: ln -s "$PWD/src/cli.mjs" ~/.local/bin/probe   (if npm 
 Try it on the bundled, deliberately vulnerable demos:
 
 ```bash
-npm run demo:mcp                        # 7 critical · 2 high · 2 medium · 3 low
+npm run demo:mcp                        # 8 critical · 2 high · 2 medium · 3 low
 node examples/mock-agent.mjs &          # a fake agent that obeys anything
 npm run demo:agent                      # 26 of 29 probes succeed
 

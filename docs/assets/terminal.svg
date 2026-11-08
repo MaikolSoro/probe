@@ -41,9 +41,9 @@
   <text x="28" y="284" class="l10"><tspan fill="#f87171" font-weight="700">HIGH    </tspan><tspan fill="#e5e7eb" xml:space="preserve"> (server)               </tspan><tspan fill="#c9cdd3">Private data and an outbound channel exposed together</tspan></text>
   <text x="28" y="306" class="l11"><tspan fill="#fbbf24" font-weight="700">MEDIUM  </tspan><tspan fill="#e5e7eb" xml:space="preserve"> run_command            </tspan><tspan fill="#c9cdd3">Claims to be read-only but changes state</tspan></text>
   <text x="28" y="328" class="l12"><tspan fill="#22d3ee" font-weight="700">LOW     </tspan><tspan fill="#e5e7eb" xml:space="preserve"> read_customer_records  </tspan><tspan fill="#c9cdd3">Free-form "query" parameter without constraints</tspan></text>
-  <text x="28" y="350" class="l13" fill="#6b7280">…and 7 more</text>
+  <text x="28" y="350" class="l13" fill="#6b7280">…and 8 more</text>
   
-  <text x="28" y="394" class="l15" fill="#e5e7eb">critical: 7 · high: 2 · medium: 2 · low: 3</text>
+  <text x="28" y="394" class="l15" fill="#e5e7eb">critical: 8 · high: 2 · medium: 2 · low: 3</text>
   <text x="28" y="416" class="l16" fill="#4ade80">✔ Reports written to reports/: report.md, report.json, report.html, report.pdf</text>
   <rect class="cursor l16" x="28" y="424" width="8" height="16" fill="#5eead4"/>
 </svg>

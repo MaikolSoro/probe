@@ -94,9 +94,9 @@ const lines = [
   ['high', 'HIGH    ', '(server)             ', 'Private data and an outbound channel exposed together'],
   ['medium', 'MEDIUM  ', 'run_command          ', 'Claims to be read-only but changes state'],
   ['low', 'LOW     ', 'read_customer_records', 'Free-form "query" parameter without constraints'],
-  ['dim', '…and 7 more'],
+  ['dim', '…and 8 more'],
   ['blank', ''],
-  ['summary', 'critical: 7 · high: 2 · medium: 2 · low: 3'],
+  ['summary', 'critical: 8 · high: 2 · medium: 2 · low: 3'],
   ['ok', '✔ Reports written to reports/: report.md, report.json, report.html, report.pdf'],
 ];
 const W = 960;

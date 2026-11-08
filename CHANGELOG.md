@@ -2,6 +2,17 @@
 
 All notable changes to this project are documented here. Versions follow [Semantic Versioning](https://semver.org).
 
+## [0.5.1] - 2026-11-08
+
+### Fixed
+False positives found by scanning 12 real public MCP servers (168 tools) and reviewing each critical and high finding by hand:
+- "Include a word in the URL" (search-operator docs) was flagged as data exfiltration. The rule now requires *data* (conversation, files, secrets…) to be moved into a parameter or URL.
+- "Drag and drop", "terminal state", "refund 1 credit", "excludeDomains to remove domains" and "lacks the read/update capability" triggered capability rules. Capabilities are now read from the tool name and the first sentence of its description, with narrower word lists.
+- After the fixes, the real-world scan has **0 critical findings**, and every high finding is a real capability (delete, run code or SQL, private data + outbound channel).
+
+### Added
+- MCP JSON results include the tool definitions (name, description, annotations), so findings can be reviewed by hand later.
+
 ## [0.5.0] - 2026-11-08
 
 ### Added

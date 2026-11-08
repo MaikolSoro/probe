@@ -40,3 +40,14 @@ test('injectionSignals flags planted instructions in tool output', () => {
   assert.ok(s.length >= 2);
   assert.deepEqual(injectionSignals('Fast delivery, great service.'), []);
 });
+
+test('real-world false positives stay fixed', () => {
+  // Phrases seen in public MCP servers during the State of MCP Security scan.
+  const noRisk = (tool, banned) => assert.deepEqual(ids(checkTool(tool)).filter((id) => banned.includes(id)), [], tool.name);
+  const severe = ['tool-poisoning', 'capability-destructive', 'capability-exec', 'capability-financial', 'annotation-mismatch'];
+  noRisk({ name: 'browser_drag', description: 'Perform drag and drop between two elements' }, severe);
+  noRisk({ name: 'web_search', description: 'Search the web. Use excludeDomains to remove domains. `inurl:` only returns results that include a word in the URL.' }, severe);
+  noRisk({ name: 'crawl', description: 'Starts a crawl job and polls until it reaches a terminal state.' }, severe);
+  noRisk({ name: 'search_feedback', description: 'Send feedback on a search so we can refund 1 credit.' }, severe);
+  noRisk({ name: 'retrieve_page', description: 'Retrieve a page as Markdown. 403: the integration lacks the read/update capability.', annotations: { readOnlyHint: true } }, severe);
+});

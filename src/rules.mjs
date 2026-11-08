@@ -22,7 +22,8 @@ const INJECTION_PATTERNS = [
   [new RegExp(String.raw`\b(read|send|pass|include|attach|upload|copy|forward|cat|leak|lee|leer|envía|envia|enviar|adjunta|incluye|copia|sube|leia|envie|anexe|inclua|copie)\b[^.]{0,80}` + SECRET, 'i'), 'tells the model to read or send secrets or credential files'],
   // Spanish and Portuguese: "no le digas (nada) al usuario", "não diga ao usuário".
   [/\b(no le digas|no le menciones|no informes|sin decirle|não (diga|conte|informe|mencione))\b[^.]{0,30}\b(usuario|usuária|usuário|cliente)\b/i, 'asks the model to hide something from the user'],
-  [/(send|forward|copy|include) .{0,40}(to|in) (the )?(sidenote|note|parameter|http|url|webhook)/i, 'asks the model to move data into a parameter or URL'],
+  // Must move *data* (conversation, files, secrets…) somewhere; "include a word in the URL" is search syntax.
+  [/\b(send|forward|copy|include|append|put|pass)\b (the |all |its |their |your )?(full |entire |whole )?(conversation|chat|history|context|contents?|data|messages|secrets?|keys?|tokens?|credentials|files?|documents?)\b[^.]{0,40}\b(to|in|into|as) (the )?(sidenote|notes?|parameter|field|http|url|webhook)/i, 'asks the model to move data into a parameter or URL'],
   [/!\[[^\]]*\]\(https?:\/\//i, 'embeds an external image, a classic data-exfiltration channel'],
   [/\b(ask|request|prompt) (the user|them|the customer) for (their |the |a )?[\w ]{0,25}(password|passcode|pin|otp|2fa|verification code|seed phrase|card number)/i, 'tells the model to ask the user for credentials'],
   [/\b(note|message|instructions?) (to|for) the (ai|assistant|model|llm)\b|\bfrom now on,? you (are|must|will)\b|\byou are now in\b/i, 'speaks directly to the model to change its behavior'],
@@ -42,9 +43,10 @@ export function injectionSignals(text = '') {
 }
 
 const CAPABILITIES = [
-  { id: 'exec', pattern: /\b(exec|shell|bash|command|run_?code|eval|terminal|subprocess)\b/i, label: 'code or command execution', severity: 'high' },
-  { id: 'destructive', pattern: /\b(delete|drop|remove|truncate|destroy|wipe|purge)\b/i, label: 'destructive operations', severity: 'high' },
-  { id: 'financial', pattern: /\b(payment|pay|transfer|refund|charge|invoice|payout|wire)\b/i, label: 'money movement', severity: 'high' },
+  // Word lists are narrow on purpose: real servers say "terminal state", "drag and drop" and "refund 1 credit".
+  { id: 'exec', pattern: /\b(exec|execute|shell|bash|run (code|commands?|scripts?|a (shell )?command)|runs? (a |any )?(shell )?commands?|eval|subprocess|command line)\b/i, label: 'code or command execution', severity: 'high' },
+  { id: 'destructive', pattern: /\b(delete|deletes|remove|removes|truncate|destroy|wipe|wipes|purge|drop (table|database|collection|index|schema))\b/i, label: 'destructive operations', severity: 'high' },
+  { id: 'financial', pattern: /\b(payments?|payouts?|wire transfer|transfer (money|funds)|(pay|pays|paying) (an?|the|this) (invoice|bill|supplier|vendor)|refund (a |the )?(payment|charge|order|customer)|charge (a |the )?(card|customer))\b/i, label: 'money movement', severity: 'high' },
   { id: 'outbound', pattern: /\b(send|email|mail|post|http|fetch|webhook|upload|publish|tweet|message)\b/i, label: 'outbound communication', severity: 'medium' },
   { id: 'write', pattern: /\b(write|update|create|insert|modify|edit|save)\b/i, label: 'write access', severity: 'low' },
   { id: 'private_read', pattern: /\b(customer|client|user|employee|patient|record|database|db|crm|file|document|inbox|secret)s?\b/i, label: 'access to private data', severity: 'info' },
@@ -53,8 +55,13 @@ const CAPABILITIES = [
 // "foo_bar" and "fooBar" become "foo bar" so word-boundary patterns match tool names.
 const words = (s = '') => s.replace(/[_\-.]/g, ' ').replace(/([a-z])([A-Z])/g, '$1 $2');
 
+// What a tool *does* is in its name and first sentence; the rest of a long
+// description mentions options, errors and other tools ("excludeDomains to
+// remove domains", "lacks the read/update capability"), which caused false hits.
+const firstSentence = (s = '') => s.trim().split(/(?<=[.!?])\s|\n/)[0].slice(0, 200);
+
 export function capabilitiesOf(tool) {
-  const text = `${words(tool.name)} ${tool.description ?? ''}`;
+  const text = `${words(tool.name)} ${firstSentence(tool.description)}`;
   return CAPABILITIES.filter((c) => c.pattern.test(text)).map((c) => c.id);
 }
 
