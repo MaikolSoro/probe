@@ -38,7 +38,8 @@ Most tooling filters what the **user** types. Probe looks at what the **agent ca
 | **Indirect prompt injection** through tool output | Reviews, emails, web pages a tool returns | `probe mcp --call-readonly` |
 | **Excessive agency:** shell, delete, payments, outbound email | Tool design | `probe mcp` |
 | **Exfiltration paths:** private data + an outbound channel | One server exposing both | `probe mcp` |
-| **The agent obeys injected text** | Your chatbot or agent endpoint | `probe agent` |
+| **The agent obeys injected text, or uses its tools for the attacker** | Your chatbot, agent endpoint or a model API | `probe agent` |
+| **Rug pulls:** a server changes its tools after you approved it | Any MCP server | `probe mcp --pin` |
 | **Leaked secrets and unpinned servers** | `claude_desktop_config.json`, `.mcp.json`, `mcp.json` | `probe config` |
 | **Malicious skills, hooks and installers** | `SKILL.md`, slash commands, `CLAUDE.md`, install scripts | `probe skills` |
 
@@ -58,7 +59,7 @@ npm install -g @avenzoq/probe
 probe config                                    # audit every MCP server you have configured
 probe mcp -- npx -y some-mcp-server@1.2.3       # scan one MCP server (stdio)
 probe mcp --url https://example.com/mcp         # scan a remote MCP server (Streamable HTTP)
-probe agent --url https://example.com/chat      # throw 9 prompt-injection probes at an agent
+probe agent --url https://example.com/chat      # throw 32 attack probes at an agent
 probe skills ./some-skill-pack                  # review skills before installing them
 ```
 
@@ -77,7 +78,7 @@ Try it on the bundled, deliberately vulnerable demos:
 ```bash
 npm run demo:mcp                        # 7 critical · 2 high · 2 medium · 3 low
 node examples/mock-agent.mjs &          # a fake agent that obeys anything
-npm run demo:agent                      # 9 of 9 probes succeed
+npm run demo:agent                      # 26 of 29 probes succeed
 
 # Against a real model: a small support bot backed by the Claude API
 ANTHROPIC_API_KEY=… node examples/claude-agent.mjs &
@@ -108,18 +109,32 @@ probe agent --url http://localhost:8788/chat
 
 ### AI agents
 
-`probe agent` sends 9 probes, each with a random canary. If the canary comes back, the agent obeyed untrusted input.
+`probe agent` runs **32 attack probes** in 7 categories. Each one carries a random canary: if the canary comes back, or a fake tool gets called with the attacker's data, the agent obeyed untrusted input.
 
-| Probe | Technique |
-|---|---|
-| `direct-override` · `spanish-override` | "Ignore all previous instructions", in English and in Spanish |
-| `fake-authority` | A fake system or administrator notice |
-| `indirect-email` · `indirect-document` | Instructions hidden in content the agent summarizes or translates |
-| `payload-splitting` · `encoded-instruction` | The instruction split into variables, or base64-encoded |
-| `markdown-exfiltration` | Data smuggled into an image URL the chat would load |
-| `system-prompt-leak` | Extraction of the agent's hidden instructions |
+| Category | Probes | Technique |
+|---|---|---|
+| `direct` | 8 | Overrides in English, Spanish and Portuguese; fake admin notice; developer mode; role-play; refusal suppression; forced prefix |
+| `indirect` | 9 | Instructions hidden in an email, document, web page, JSON, CSV, code comment or review; fake delimiters; fake transcripts |
+| `obfuscation` | 5 | Base64, ROT13, payload splitting, zero-width characters, translation smuggling |
+| `exfiltration` | 2 | Data smuggled out through markdown images and links |
+| `leak` | 3 | System prompt extraction: repeat, translate or summarize the hidden instructions |
+| `multi-turn` | 2 | Gradual (crescendo) manipulation and instructions planted early in the chat |
+| `tool-use` | 3 | Injected text makes the agent **send an email to the attacker, read SSH keys or transfer money** using fake tools that never run |
 
-Works with any JSON endpoint. Use `--field`, `--reply` (for example `choices.0.message.content`) and `--header "Authorization: Bearer …"`.
+**Targets:**
+
+```bash
+# Your agent, behind any JSON endpoint
+probe agent --url https://my-bot.com/chat                                   # {"message"} → {"reply"}
+probe agent --url https://my-bot.com/chat --history-field messages          # enables multi-turn probes
+
+# A model API directly, with your system prompt
+probe agent --target openai --model gpt-4.1-mini --system @prompt.txt      # OPENAI_API_KEY
+probe agent --target anthropic --model claude-haiku-5-5 --system @prompt.txt  # ANTHROPIC_API_KEY
+probe agent --target openai --url http://localhost:11434/v1/chat/completions --model llama3   # Ollama or any OpenAI-compatible API
+```
+
+Tool-use probes need `--target openai` or `--target anthropic`. Multi-turn probes need one of those or `--history-field`. Select categories with `--categories direct,tool-use`.
 
 ### MCP client configs
 
@@ -141,6 +156,36 @@ It then runs the MCP checks on every server it can start. `--path <file>` scans 
 It also lists every external domain the files reference.
 
 Offensive-security skill packs legitimately *describe* attacks. Probe's rules target instructions to **your** agent, not attack vocabulary, and lower the severity of commands that only appear in docs or comments.
+
+### LLM judge (`--llm`)
+
+Patterns are fast but miss reworded attacks and sometimes flag harmless text. With `--llm`, Claude reviews every tool description, tool output and flagged skill excerpt:
+- **confirms** real findings;
+- **dismisses** false positives, lowering them to `low` with the reason (never hiding them);
+- **adds** findings the patterns missed.
+
+```bash
+export ANTHROPIC_API_KEY=…
+probe mcp --llm -- node server.js
+probe skills ./skill-pack --llm --llm-model claude-haiku-5-5
+```
+
+The content under review is untrusted, so it is fenced with a random boundary and the judge is told to classify it, never to follow it.
+
+### Rug-pull detection (`--pin`)
+
+A server can be safe when you approve it and turn malicious in an update. `--pin` saves a fingerprint of every tool the first time (trust on first use). Later scans report:
+- changed tools (**high**);
+- new tools (**medium**);
+- removed tools (**low**).
+
+```bash
+probe mcp --pin probe.pins.json -- npx -y some-mcp-server     # first run pins, later runs compare
+probe config --pin probe.pins.json                             # pin every configured server
+probe mcp --pin probe.pins.json --update-pins -- …             # accept a reviewed change
+```
+
+Commit the pin file so CI catches changes.
 
 ## Client-ready reports
 
@@ -236,16 +281,18 @@ Everything is plain Node.js ESM, with no build step. The only dependencies are t
 ## Limits
 
 - The checks are **pattern-based**. They catch known poisoning techniques and risky designs, not every possible attack. Expect some false positives on legitimate tools that really send email or run commands.
-- Agent probes are single-turn, over a JSON HTTP endpoint.
+- Agent probes test one conversation at a time. Tool-use probes use fake tools and report the *attempt*; they never execute anything.
+- The LLM judge is itself an LLM. It reduces noise but can be wrong, so review its reasoning in the report.
 - **A clean report is not a guarantee.** It means none of these checks found a problem.
 
 ## Roadmap
 
-- [ ] Multi-turn and tool-use probes against agent frameworks
-- [ ] Rug-pull detection (tool definitions that change between scans)
+- [x] Multi-turn and tool-use probes, OpenAI and Anthropic targets
+- [x] Rug-pull detection (`--pin`)
 - [x] SARIF output and GitHub Action
 - [x] `.probeignore` and `--fail-on`
-- [ ] LLM judge (`--llm`) to confirm or dismiss pattern matches
+- [x] LLM judge (`--llm`)
+- [ ] Public benchmark and "State of MCP Security" research
 - [ ] **Guard:** a runtime policy firewall between agents and their tools
 
 See [docs/ROADMAP.md](docs/ROADMAP.md).

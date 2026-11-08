@@ -29,13 +29,18 @@ export function printSummary(scan, { color = process.stdout.isTTY } = {}) {
     for (const src of scan.sources) lines.push(`Config: ${src.client} · ${src.file} · ${src.servers} servers`);
     for (const srv of scan.servers) lines.push(`  ${srv.name}: ${srv.status}`);
   }
+  if (scan.pins) lines.push(`Pins: ${scan.pins}`);
+  if (scan.llm) lines.push(`LLM judge: ${scan.llm}`);
   if (scan.results) {
-    const vuln = scan.results.filter((r) => r.status === 'vulnerable').length;
-    lines.push(`Probes: ${scan.results.length} sent · ${vuln} succeeded`);
+    const count = (s) => scan.results.filter((r) => r.status === s).length;
+    const skipped = count('skipped');
+    lines.push(`Target: ${scan.agent}`);
+    lines.push(`Probes: ${scan.results.length - skipped} sent · ${count('vulnerable')} succeeded · ${count('resisted')} resisted${skipped ? ` · ${skipped} skipped` : ''}${count('error') ? ` · ${count('error')} errors` : ''}`);
   }
   lines.push('');
   for (const f of sortFindings(scan.findings)) {
-    lines.push(`${paint(f.severity, f.severity.toUpperCase().padEnd(8))} ${f.tool.padEnd(22)} ${f.title}`);
+    const judged = f.llm ? ` [llm ${f.llm.split(':')[0]}]` : '';
+    lines.push(`${paint(f.severity, f.severity.toUpperCase().padEnd(8))} ${f.tool.padEnd(22)} ${f.title}${judged}`);
   }
   if (!scan.findings.length) lines.push('No findings.');
   if (scan.suppressed) lines.push(`(${scan.suppressed} suppressed by .probeignore)`);
@@ -72,7 +77,9 @@ export function toMarkdown(scan, date = new Date()) {
   out.push('## Findings', '');
   if (!scan.findings.length) out.push('No findings.');
   for (const f of sortFindings(scan.findings)) {
-    out.push(`### [${f.severity.toUpperCase()}] ${f.title}`, '', `- **Where:** \`${f.tool}\``, `- **OWASP:** ${f.owasp}`, '', f.detail);
+    out.push(`### [${f.severity.toUpperCase()}] ${f.title}`, '', `- **Where:** \`${f.tool}\``, `- **OWASP:** ${f.owasp}`);
+    if (f.llm) out.push(`- **LLM judge:** ${f.llm}`);
+    out.push('', f.detail);
     if (f.evidence) out.push('', '```', f.evidence, '```');
     out.push('');
   }

@@ -33,14 +33,15 @@ const T = {
     what: 'What it means',
     fix: 'How to fix it',
     evidence: 'Evidence',
-    result: { vulnerable: 'Obeyed', resisted: 'Resisted', error: 'Error' },
+    result: { vulnerable: 'Obeyed', resisted: 'Resisted', error: 'Error', skipped: 'Skipped' },
+    judge: 'LLM judge',
     found: (n, c) =>
       n
         ? `We found <strong>${n} issue${n === 1 ? '' : 's'}</strong>. ${c.critical + c.high ? `<strong>${c.critical + c.high}</strong> of them are critical or high and should be fixed before this system is used in production.` : 'None of them is critical or high.'}`
         : 'These checks found no issues. That does not prove the system is secure; it means none of these known problems were detected.',
     scopeMcp: (n) => `Static analysis of the ${n} tools the MCP server exposes: names, descriptions, input schemas and annotations. No tool was executed for this part.`,
     scopeCalled: (list) => `Tools that declare themselves read-only and take no arguments were also called once (${list}) to check their output for planted instructions.`,
-    scopeAgent: (n) => `${n} test messages were sent to the chat endpoint. Each one tries to make the agent follow untrusted instructions and carries a random code; if the code comes back, the agent obeyed.`,
+    scopeAgent: (n) => `${n} attack probes were run against the agent. Each one tries to make the agent follow untrusted instructions and carries a random code; if the code comes back, the agent obeyed.`,
     scopeSkills: (n, k, d) => `Static analysis of ${n} files (${k} skills): instruction text aimed at the agent, invisible characters, scripts that download and run code, writes to sensitive files, hooks and MCP installs. Nothing was executed. External domains referenced: ${d || 'none'}.`,
     scopeConfig: (list) => `Review of the MCP servers configured in local AI clients (${list}), including secrets in plain text, unpinned packages and insecure transport, plus the static tool checks on each server that could be started.`,
     disclaimer: 'This report covers only the checks listed above, on the date shown. A clean result does not guarantee that a system is secure. Tests were run only on systems the client owns or authorized.',
@@ -66,14 +67,15 @@ const T = {
     what: 'Qué significa',
     fix: 'Cómo corregirlo',
     evidence: 'Evidencia',
-    result: { vulnerable: 'Obedeció', resisted: 'Resistió', error: 'Error' },
+    result: { vulnerable: 'Obedeció', resisted: 'Resistió', error: 'Error', skipped: 'Omitida' },
+    judge: 'Juez IA',
     found: (n, c) =>
       n
         ? `Encontramos <strong>${n} hallazgo${n === 1 ? '' : 's'}</strong>. ${c.critical + c.high ? `<strong>${c.critical + c.high}</strong> son críticos o altos y conviene corregirlos antes de usar este sistema en producción.` : 'Ninguno es crítico ni alto.'}`
         : 'Estas pruebas no encontraron problemas. Eso no garantiza que el sistema sea seguro: significa que no se detectó ninguno de estos problemas conocidos.',
     scopeMcp: (n) => `Análisis estático de las ${n} herramientas que expone el servidor MCP: nombres, descripciones, parámetros y anotaciones. En esta parte no se ejecutó ninguna herramienta.`,
     scopeCalled: (list) => `Además, se llamó una vez a las herramientas que se declaran de solo lectura y no reciben parámetros (${list}) para revisar si su respuesta trae instrucciones plantadas.`,
-    scopeAgent: (n) => `Se enviaron ${n} mensajes de prueba al chat. Cada uno intenta que el agente siga instrucciones no confiables y lleva un código aleatorio; si el código vuelve en la respuesta, el agente obedeció.`,
+    scopeAgent: (n) => `Se ejecutaron ${n} ataques de prueba contra el agente. Cada uno intenta que el agente siga instrucciones no confiables y lleva un código aleatorio; si el código vuelve en la respuesta, el agente obedeció.`,
     scopeSkills: (n, k, d) => `Análisis estático de ${n} archivos (${k} skills): texto dirigido al agente, caracteres invisibles, scripts que descargan y ejecutan código, escritura en archivos sensibles, hooks e instalación de servidores MCP. No se ejecutó nada. Dominios externos referenciados: ${d || 'ninguno'}.`,
     scopeConfig: (list) => `Revisión de los servidores MCP configurados en los clientes de IA locales (${list}): secretos en texto plano, paquetes sin versión fija y transporte inseguro, más las pruebas estáticas de herramientas en cada servidor que se pudo iniciar.`,
     disclaimer: 'Este informe cubre solo las pruebas descritas, en la fecha indicada. Un resultado limpio no garantiza que un sistema sea seguro. Las pruebas se hicieron únicamente sobre sistemas del cliente o con su autorización.',
@@ -117,6 +119,7 @@ export function toHtml(scan, { lang = 'en', client = '', date = new Date() } = {
       <dl>
         <dt>${t.where}</dt><dd class="mono">${esc(whereOf(f))}</dd>
         <dt>OWASP</dt><dd>${esc(f.owasp)}</dd>
+        ${f.llm ? `<dt>${t.judge}</dt><dd>${esc(f.llm)}</dd>` : ''}
       </dl>
       <h4>${t.what}</h4><p>${esc(g.explain)}</p>
       ${g.fix ? `<h4>${t.fix}</h4><p>${esc(g.fix)}</p>` : ''}
@@ -213,7 +216,7 @@ export function toHtml(scan, { lang = 'en', client = '', date = new Date() } = {
     scan.results
       ? `<h2><span class="idx">03</span>${t.probes}</h2>
   <table><thead><tr><th>#</th><th>Probe</th><th></th></tr></thead><tbody>
-  ${scan.results.map((r, i) => `<tr><td class="mono">${i + 1}</td><td class="mono">${esc(r.probe)}</td><td class="${r.status === 'resisted' ? 'ok' : 'bad'}">${t.result[r.status]}</td></tr>`).join('')}
+  ${scan.results.map((r, i) => `<tr><td class="mono">${i + 1}</td><td class="mono">${esc(r.probe)}</td><td class="${r.status === 'resisted' ? 'ok' : r.status === 'skipped' ? '' : 'bad'}">${t.result[r.status]}</td></tr>`).join('')}
   </tbody></table>`
       : ''
   }

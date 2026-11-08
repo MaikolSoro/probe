@@ -10,7 +10,7 @@ This project is **separate** from the AVENZOQ website (`../avenqor-web`, its own
 
 ## Status (2026-11-07)
 
-- Version 0.3.0: four modes (`mcp`, `agent`, `config`, `skills`), SARIF, `--fail-on`, `.probeignore`, GitHub Action (`action.yml`). `npm test` passes 15/15. Validated on Claude-BugHunter.
+- Version 0.4.0: modes `mcp`, `agent`, `config`, `skills`; SARIF, `--fail-on`, `.probeignore`, GitHub Action; **LLM judge** (`--llm`), **rug-pull pins** (`--pin`), **32 agent probes** with OpenAI/Anthropic targets, multi-turn and tool-use. `npm test` passes 21/21. The LLM judge is only tested with a mocked model (no API key used during development).
 - **GitHub:** https://github.com/MaikolSoro/probe (branch `main`). Not on npm yet.
 - **License: Apache-2.0** (`LICENSE`, `NOTICE`). The Geist fonts are under the OFL (`assets/OFL.txt`). The AVENZOQ name and logo are not licensed.
 - **npm:** `@avenzoq/probe`, with the `probe` and `avenzoq-probe` commands. Only the owner can publish (`npm login`, then `npm publish`); the npm org `avenzoq` must exist first.
@@ -37,11 +37,13 @@ node src/cli.mjs                           # usage
 | `src/mcp-scan.mjs` | Connects over stdio or Streamable HTTP with `@modelcontextprotocol/sdk`, lists tools, optional read-only output check |
 | `src/config-scan.mjs` | Finds MCP configs (Claude Desktop/Code, Cursor, VS Code, Windsurf), checks secrets, unpinned packages and plain HTTP, then scans each server (`--no-connect` skips starting them) |
 | `src/skills-scan.mjs` | Static scan of skills, slash commands, CLAUDE.md/AGENTS.md, hooks and install scripts; severity drops for commands that only appear in docs or comments |
+| `src/llm.mjs` | LLM judge: `callClaude`, `judgeItems` (fenced untrusted content, batches of 15), `mergeVerdicts` (confirm, dismiss to low, add) |
+| `src/pins.mjs` | Rug-pull detection: tool fingerprints, `comparePins` (changed/added/removed), pin file I/O |
 | `src/sarif.mjs` | SARIF 2.1.0 output (rules, levels, `security-severity`, file locations) |
 | `src/ignore.mjs` | `.probeignore` parsing and suppression |
 | `action.yml` | Composite GitHub Action (inputs `args`, `fail-on`, `sarif`, `report-dir`) |
-| `src/agent-scan.mjs` | POSTs each probe to a chat endpoint and detects canaries |
-| `src/payloads.mjs` | The prompt-injection probes (id, title, OWASP, `build(canary)`, optional `detect`, `severity`) |
+| `src/agent-scan.mjs` | Targets (`json`, `openai`, `anthropic`), multi-turn conversations, fake-tool detection |
+| `src/payloads.mjs` | 32 probes in 7 categories (`build(canary)` returns a string or an array of turns; `tools: true` for tool-use; `detect({ text, toolCalls })`) and `FAKE_TOOLS` |
 | `src/report.mjs` | Terminal summary and Markdown report |
 | `src/report-html.mjs` | Client-facing HTML report (es/en, AVENZOQ branding, fonts embedded from `assets/`) and PDF via headless Chrome |
 | `src/guidance.mjs` | Plain-language "what it means / how to fix it" per finding id, in English and Spanish. **Add an entry here for every new rule or probe** |

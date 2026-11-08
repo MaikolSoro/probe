@@ -36,10 +36,10 @@
   </g>
   <g transform="translate(48 256)">
     <text x="0" y="0" class="mode"><tspan fill="#ff4d6d">▸</tspan> MCP SERVERS</text>
-    <text x="14" y="18" class="modesub">tool poisoning · excessive agency</text></g>
+    <text x="14" y="18" class="modesub">tool poisoning · rug pulls</text></g>
   <g transform="translate(348 256)">
     <text x="0" y="0" class="mode"><tspan fill="#ff4d6d">▸</tspan> AI AGENTS</text>
-    <text x="14" y="18" class="modesub">canary prompt-injection probes</text></g>
+    <text x="14" y="18" class="modesub">OpenAI · Anthropic · any JSON API</text></g>
   <g transform="translate(648 256)">
     <text x="0" y="0" class="mode"><tspan fill="#ff4d6d">▸</tspan> CLIENT CONFIGS</text>
     <text x="14" y="18" class="modesub">Claude · Cursor · VS Code</text></g>
@@ -50,9 +50,9 @@
   <g transform="translate(148 352)" text-anchor="middle">
     <text class="num" fill="#ff4d6d">4</text><text y="22" class="lbl">SCAN MODES</text></g>
   <g transform="translate(385 352)" text-anchor="middle">
-    <text class="num" fill="#f47bff">39</text><text y="22" class="lbl">CHECKS</text></g>
+    <text class="num" fill="#f47bff">36</text><text y="22" class="lbl">CHECKS + LLM JUDGE</text></g>
   <g transform="translate(622 352)" text-anchor="middle">
-    <text class="num" fill="#a98bff">9</text><text y="22" class="lbl">INJECTION PROBES</text></g>
+    <text class="num" fill="#a98bff">32</text><text y="22" class="lbl">ATTACK PROBES</text></g>
   <g transform="translate(859 352)" text-anchor="middle">
     <text class="num" fill="#ff8a3d">10</text><text y="22" class="lbl">OWASP LLM TOP 10</text></g>
   <g transform="translate(1096 352)" text-anchor="middle">

@@ -13,14 +13,14 @@ const esc = (s) => s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, 
 // ---------- banner ----------
 const stats = [
   ['4', 'SCAN MODES', '#ff4d6d'],
-  ['39', 'CHECKS', '#f47bff'],
-  ['9', 'INJECTION PROBES', '#a98bff'],
+  ['36', 'CHECKS + LLM JUDGE', '#f47bff'],
+  ['32', 'ATTACK PROBES', '#a98bff'],
   ['10', 'OWASP LLM TOP 10', '#ff8a3d'],
   ['ES/EN', 'CLIENT REPORTS', '#5eead4'],
 ];
 const modes = [
-  ['MCP SERVERS', 'tool poisoning · excessive agency'],
-  ['AI AGENTS', 'canary prompt-injection probes'],
+  ['MCP SERVERS', 'tool poisoning · rug pulls'],
+  ['AI AGENTS', 'OpenAI · Anthropic · any JSON API'],
   ['CLIENT CONFIGS', 'Claude · Cursor · VS Code'],
   ['SKILLS', 'SKILL.md · hooks · installers'],
 ];

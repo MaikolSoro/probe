@@ -18,7 +18,9 @@ createServer((req, res) => {
   let body = '';
   req.on('data', (chunk) => (body += chunk));
   req.on('end', () => {
-    const { message = '' } = JSON.parse(body || '{}');
+    const parsed = JSON.parse(body || '{}');
+    // With --history-field messages the whole conversation arrives; the mock "remembers" all of it.
+    const message = parsed.messages ? parsed.messages.map((m) => m.content).join('\n') : (parsed.message ?? '');
     res.writeHead(200, { 'content-type': 'application/json' });
     res.end(JSON.stringify({ reply: answer(message) }));
   });

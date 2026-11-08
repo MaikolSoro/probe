@@ -3,6 +3,8 @@ import { Client } from '@modelcontextprotocol/sdk/client/index.js';
 import { StdioClientTransport, getDefaultEnvironment } from '@modelcontextprotocol/sdk/client/stdio.js';
 import { StreamableHTTPClientTransport } from '@modelcontextprotocol/sdk/client/streamableHttp.js';
 import { checkServer, injectionSignals, OWASP } from './rules.mjs';
+import { comparePins } from './pins.mjs';
+import { judgeItems, mergeVerdicts, llmFinding } from './llm.mjs';
 
 // Only tools that declare themselves read-only and need no arguments are called,
 // so the opt-in output check cannot change anything on the target.
@@ -12,6 +14,7 @@ const safeToCall = (tool) =>
 async function checkOutputs(client, tools) {
   const findings = [];
   const called = [];
+  const outputs = {};
   for (const tool of tools.filter(safeToCall)) {
     let text;
     try {
@@ -22,6 +25,7 @@ async function checkOutputs(client, tools) {
       continue;
     }
     called.push({ tool: tool.name, status: 'ok' });
+    outputs[tool.name] = text;
     for (const s of injectionSignals(text)) {
       findings.push({
         id: 'tool-output-injection',
@@ -34,14 +38,14 @@ async function checkOutputs(client, tools) {
       });
     }
   }
-  return { findings, called };
+  return { findings, called, outputs };
 }
 
-export async function scanMcp({ command, args = [], url, env, callReadonly = false, timeoutMs = 30000 }) {
+export async function scanMcp({ command, args = [], url, env, callReadonly = false, timeoutMs = 30000, pins, llm }) {
   const transport = url
     ? new StreamableHTTPClientTransport(new URL(url))
     : new StdioClientTransport({ command, args, env: env ? { ...getDefaultEnvironment(), ...env } : undefined, stderr: 'ignore' });
-  const client = new Client({ name: 'avenzoq-probe', version: '0.2.0' });
+  const client = new Client({ name: 'avenzoq-probe', version: '0.4.0' });
 
   // A server that never answers must not hang the scan; closing the client also stops its process.
   let timer;
@@ -52,19 +56,44 @@ export async function scanMcp({ command, args = [], url, env, callReadonly = fal
     await Promise.race([client.connect(transport), timeout]);
     const server = client.getServerVersion();
     const { tools } = await Promise.race([client.listTools(), timeout]);
-    const findings = checkServer(tools);
+    let findings = checkServer(tools);
     let called;
+    let outputs = {};
     if (callReadonly) {
-      const outputs = await checkOutputs(client, tools);
-      findings.push(...outputs.findings);
-      called = outputs.called;
+      const checked = await checkOutputs(client, tools);
+      findings.push(...checked.findings);
+      called = checked.called;
+      outputs = checked.outputs;
     }
+    const target = url ?? [command, ...args].join(' ');
+
+    let pinStatus;
+    if (pins) {
+      const result = comparePins(pins.data, pins.key ?? target, tools, { update: pins.update });
+      findings.push(...result.findings);
+      pinStatus = result.status;
+    }
+
+    if (llm) {
+      const items = [
+        ...tools.map((t) => ({ key: `desc:${t.name}`, kind: 'MCP tool description', text: `${t.name}: ${t.description ?? ''}` })),
+        ...Object.entries(outputs).map(([name, text]) => ({ key: `out:${name}`, kind: 'MCP tool output', text })),
+      ];
+      const verdicts = await judgeItems(items, llm);
+      findings = mergeVerdicts(findings, verdicts, {
+        keyOf: (f) => `${f.id === 'tool-output-injection' ? 'out' : 'desc'}:${f.tool}`,
+        newFinding: (key, v) => llmFinding(key.startsWith('out:') ? 'llm-output-injection' : 'llm-tool-poisoning', key.slice(key.indexOf(':') + 1), v),
+      });
+    }
+
     return {
-      target: url ?? [command, ...args].join(' '),
+      target,
       kind: 'mcp',
       server: server ? `${server.name} ${server.version}` : 'unknown',
       tools: tools.map((t) => t.name),
       called,
+      pins: pinStatus,
+      llm: llm ? llm.model ?? 'default' : undefined,
       findings,
     };
   } finally {

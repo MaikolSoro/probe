@@ -94,7 +94,7 @@ export function checkServerConfig(name, cfg) {
   return findings;
 }
 
-export async function scanConfigs({ paths, connect = true, timeoutMs = 20000 } = {}) {
+export async function scanConfigs({ paths, connect = true, timeoutMs = 20000, pins, llm } = {}) {
   const configs = paths ? paths.map((p) => ['Custom', p]) : KNOWN_CONFIGS;
   const sources = [];
   const findings = [];
@@ -118,9 +118,14 @@ export async function scanConfigs({ paths, connect = true, timeoutMs = 20000 } =
       if (!connect || cfg.disabled) continue;
       try {
         const scan = await scanMcp(
-          cfg.url ? { url: cfg.url, timeoutMs } : { command: cfg.command, args: cfg.args ?? [], env: cfg.env, timeoutMs },
+          {
+            ...(cfg.url ? { url: cfg.url } : { command: cfg.command, args: cfg.args ?? [], env: cfg.env }),
+            timeoutMs,
+            llm,
+            pins: pins && { ...pins, key: label },
+          },
         );
-        entry.status = `ok · ${scan.tools.length} tools`;
+        entry.status = `ok · ${scan.tools.length} tools${scan.pins ? ` · ${scan.pins}` : ''}`;
         findings.push(...scan.findings.map((f) => ({ ...f, tool: `${label} › ${f.tool}` })));
       } catch (err) {
         entry.status = `error: ${err.message}`;

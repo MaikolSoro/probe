@@ -5,6 +5,7 @@
 import { readdirSync, readFileSync, statSync } from 'node:fs';
 import { join, relative, basename, extname } from 'node:path';
 import { OWASP } from './rules.mjs';
+import { judgeItems, mergeVerdicts, llmFinding } from './llm.mjs';
 
 const TEXT_EXT = new Set(['.md', '.mdc', '.txt', '.json', '.yml', '.yaml', '.toml', '.sh', '.bash', '.zsh', '.ps1', '.py', '.js', '.mjs', '.ts']);
 const NAMED = new Set(['CLAUDE.md', 'AGENTS.md', 'GEMINI.md', '.cursorrules', '.windsurfrules']);
@@ -159,4 +160,23 @@ export function scanSkills(root) {
     domains: [...domains].sort(),
     findings,
   };
+}
+
+// --llm: ask the judge about each instruction-type finding, with the lines around it.
+export async function judgeSkills(scan, llm) {
+  const root = scan.target;
+  const isDir = statSync(root).isDirectory();
+  const keyOf = (f) => `${f.tool}#${/^line (\d+):/.exec(f.evidence ?? '')?.[1] ?? 1}`;
+  const items = [];
+  for (const f of scan.findings) {
+    if (!['skill-hide-from-user', 'skill-exfiltration', 'skill-encoded-blob', 'invisible-characters'].includes(f.id)) continue;
+    const line = Number(keyOf(f).split('#')[1]);
+    const lines = readFileSync(isDir ? join(root, f.tool) : root, 'utf8').split('\n');
+    items.push({ key: keyOf(f), kind: 'agent instruction file excerpt', text: lines.slice(Math.max(0, line - 15), line + 15).join('\n') });
+  }
+  if (!items.length) return scan;
+  const verdicts = await judgeItems(items, llm);
+  scan.findings = mergeVerdicts(scan.findings, verdicts, { keyOf, newFinding: (key, v) => llmFinding('llm-skill-injection', key.split('#')[0], v) });
+  scan.llm = llm.model;
+  return scan;
 }

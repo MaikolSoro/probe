@@ -11,6 +11,9 @@ import { printSummary, toMarkdown, ORDER } from './report.mjs';
 import { toHtml, htmlToPdf } from './report-html.mjs';
 import { toSarif } from './sarif.mjs';
 import { loadIgnore, applyIgnore } from './ignore.mjs';
+import { readPins, writePins } from './pins.mjs';
+import { DEFAULT_MODEL } from './llm.mjs';
+import { judgeSkills } from './skills-scan.mjs';
 
 const { version } = JSON.parse(readFileSync(join(dirname(fileURLToPath(import.meta.url)), '..', 'package.json'), 'utf8'));
 
@@ -19,20 +22,32 @@ const USAGE = `avenzoq-probe ${version} — security scanner for MCP servers, AI
 Usage:
   probe mcp [options] -- <command> [args...]   Scan a local (stdio) MCP server
   probe mcp --url <url> [options]              Scan a remote (Streamable HTTP) MCP server
-  probe agent --url <url> [options]            Send prompt-injection probes to a chat endpoint
+  probe agent --url <url> [options]            Send 32 prompt-injection probes to a chat endpoint
+  probe agent --target openai|anthropic --model <id>   ...or straight to a model API
   probe config [--path <file>] [--no-connect]  Audit the MCP servers configured in Claude, Cursor,
                                                VS Code and Windsurf (starts each configured server)
   probe skills <path>                          Scan skills, slash commands, CLAUDE.md/AGENTS.md,
                                                hooks and install scripts before you install them
 
-MCP options:
+MCP and config options:
   --call-readonly     Also call tools marked read-only that take no arguments and
                       check their output for planted instructions
+  --pin <file>        Rug-pull detection: pin tool definitions on first scan, report changes later
+  --update-pins       Accept the current tool definitions into the pin file
+
+LLM judge (mcp, config, skills):
+  --llm               Ask Claude to confirm, dismiss or add injection findings (needs ANTHROPIC_API_KEY)
+  --llm-model <id>    Model for the judge (default: ${DEFAULT_MODEL})
 
 Agent options:
+  --target <type>     json (default), openai (OpenAI-compatible APIs) or anthropic
+  --model <id>        Model for --target openai/anthropic
+  --system <text|@file>  System prompt to test with --target openai/anthropic
   --field <name>      JSON field for the message (default: message)
   --reply <path>      JSON path of the answer, e.g. choices.0.message.content (default: reply)
+  --history-field <n> Send the whole conversation in this JSON field (enables multi-turn probes)
   --header "K: V"     Extra request header (repeatable)
+  --categories <list> Only run these: direct,indirect,obfuscation,exfiltration,leak,multi-turn,tool-use
 
 Reports:
   --out <dir>         Write report.md and report.json to this folder
@@ -53,7 +68,7 @@ CI:
 Exit codes: 0 = below the --fail-on threshold, 1 = at or above it, 2 = usage or connection error.
 Only scan systems you own or are authorized to test.`;
 
-const FLAGS = { '--json': 'json', '--call-readonly': 'callReadonly', '--html': 'html', '--pdf': 'pdf', '--no-connect': 'noConnect', '--version': 'version' };
+const FLAGS = { '--json': 'json', '--call-readonly': 'callReadonly', '--html': 'html', '--pdf': 'pdf', '--no-connect': 'noConnect', '--version': 'version', '--llm': 'llm', '--update-pins': 'updatePins' };
 
 function parse(argv) {
   const opts = { headers: {} };
@@ -91,19 +106,37 @@ async function main() {
   const { opts, rest } = parse(modeArgs);
   const threshold = failThreshold(opts['fail-on']);
 
+  const llm = opts.llm ? { model: opts['llm-model'] ?? DEFAULT_MODEL } : undefined;
+  const pins = opts.pin ? { file: opts.pin, data: readPins(opts.pin), update: opts.updatePins } : undefined;
+  const system = opts.system?.startsWith('@') ? readFileSync(opts.system.slice(1), 'utf8') : opts.system;
+
   let scan;
   if (mode === 'mcp' && (opts.url || rest.length)) {
-    scan = await scanMcp({ url: opts.url, command: rest[0], args: rest.slice(1), callReadonly: opts.callReadonly });
+    scan = await scanMcp({ url: opts.url, command: rest[0], args: rest.slice(1), callReadonly: opts.callReadonly, pins, llm });
   } else if (mode === 'config') {
-    scan = await scanConfigs({ paths: opts.path ? [opts.path] : undefined, connect: !opts.noConnect });
+    scan = await scanConfigs({ paths: opts.path ? [opts.path] : undefined, connect: !opts.noConnect, pins, llm });
   } else if (mode === 'skills' && rest[0]) {
     scan = scanSkills(rest[0]);
-  } else if (mode === 'agent' && opts.url) {
-    scan = await scanAgent({ url: opts.url, field: opts.field, reply: opts.reply, headers: opts.headers });
+    if (llm) scan = await judgeSkills(scan, llm);
+  } else if (mode === 'agent' && (opts.url || opts.target === 'openai' || opts.target === 'anthropic')) {
+    if (opts.target && opts.target !== 'json' && !opts.model) throw new Error('--target openai/anthropic needs --model');
+    scan = await scanAgent({
+      target: opts.target,
+      url: opts.url,
+      model: opts.model,
+      system,
+      field: opts.field,
+      reply: opts.reply,
+      historyField: opts['history-field'],
+      headers: opts.headers,
+      categories: opts.categories,
+    });
   } else {
     console.log(USAGE);
     return mode ? 2 : 0;
   }
+
+  if (pins) writePins(pins.file, pins.data);
 
   const { kept, suppressed } = applyIgnore(scan.findings, loadIgnore(opts.ignore));
   scan.findings = kept;

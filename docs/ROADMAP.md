@@ -30,12 +30,17 @@
 - SARIF output, `--fail-on`, `.probeignore`, `--version`.
 - GitHub Action (`action.yml`), tested locally by running its script.
 
+## Done (v0.4.0, 2026-11-08): Sprint 2, technical differentiation
+
+- LLM judge (`--llm`) for MCP, config and skills.
+- Rug-pull detection (`--pin`, `--update-pins`).
+- 32 agent probes; multi-turn; tool-use with fake tools; OpenAI and Anthropic targets; `--history-field`, `--categories`.
+
 ## Next (to make it useful for real users)
 
-1. **LLM judge (`--llm`, opt-in):** Claude confirms or dismisses pattern matches in descriptions, tool output and skills, which cuts false positives and catches paraphrased attacks.
-2. **Multi-turn and tool-use probes:** support chat endpoints that take a message history, and agents that call tools. Detect whether an injected instruction leads to a tool call, not just to a canary echo.
-3. **Rug-pull detection:** save a hash of each server's tool definitions and warn when they change between scans.
-4. **Probe pack in Spanish and Portuguese**, for the Latin American market and as a differentiator.
+1. **Benchmark:** a corpus of known-good and known-bad MCP servers and skills, with Probe's measured precision and recall published.
+2. **LLM judge for agent replies:** classify partial leaks and soft compliance that canaries miss.
+3. **Probe pack in Spanish and Portuguese**, for the Latin American market and as a differentiator.
 
 ## Later (product)
 

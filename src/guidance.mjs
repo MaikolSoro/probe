@@ -314,6 +314,34 @@ const G = {
       fix: 'Usa un endpoint HTTPS.',
     },
   },
+  'llm-tool-poisoning': {
+    en: { title: 'Hidden instructions in a tool (found by the LLM judge)', explain: 'The pattern rules did not match, but the AI reviewer found instructions aimed at the agent in this tool description, usually reworded to avoid detection.', fix: 'Read the description and remove any instruction to the agent. Do not use the server until it is fixed.' },
+    es: { title: 'Instrucciones escondidas en una herramienta (detectadas por el juez IA)', explain: 'Las reglas de patrones no lo detectaron, pero el revisor con IA encontró instrucciones dirigidas al agente en esta descripción, normalmente redactadas para evadir la detección.', fix: 'Lee la descripción y elimina toda instrucción al agente. No uses el servidor hasta corregirlo.' },
+  },
+  'llm-output-injection': {
+    en: { title: 'Instructions planted in tool output (found by the LLM judge)', explain: 'The AI reviewer found text aimed at the agent in what this tool returns.', fix: 'Treat tool output as data, filter instruction-like content and limit the agent while it processes external content.' },
+    es: { title: 'Instrucciones plantadas en la respuesta de una herramienta (juez IA)', explain: 'El revisor con IA encontró texto dirigido al agente en lo que devuelve esta herramienta.', fix: 'Trata la respuesta como datos, filtra el contenido que parezca instrucción y limita al agente mientras procesa contenido externo.' },
+  },
+  'llm-skill-injection': {
+    en: { title: 'Instructions aimed at the agent in a skill (LLM judge)', explain: 'The AI reviewer found text in this file that tries to steer the agent in ways the user would not expect.', fix: 'Do not install it until the text is explained or removed.' },
+    es: { title: 'Instrucciones dirigidas al agente en una skill (juez IA)', explain: 'El revisor con IA encontró texto en este archivo que intenta dirigir al agente de formas que el usuario no esperaría.', fix: 'No la instales hasta que ese texto se explique o se elimine.' },
+  },
+  'tool-definition-changed': {
+    en: { title: 'Tool changed after it was approved (rug pull)', explain: 'The tool definition no longer matches the pinned version. Malicious updates usually arrive this way, after users already trust the server.', fix: 'Compare the old and new definitions. If the change is expected, accept it with --update-pins; if not, remove the server.' },
+    es: { title: 'La herramienta cambió después de aprobada (rug pull)', explain: 'La definición ya no coincide con la versión fijada. Las actualizaciones maliciosas suelen llegar así, cuando el servidor ya tiene la confianza de los usuarios.', fix: 'Compara la definición anterior con la nueva. Si el cambio es esperado, acéptalo con --update-pins; si no, quita el servidor.' },
+  },
+  'tool-added': {
+    en: { title: 'New tool since approval', explain: 'The server gained a tool that was not reviewed.', fix: 'Review it, then accept with --update-pins.' },
+    es: { title: 'Herramienta nueva desde la aprobación', explain: 'El servidor agregó una herramienta que no fue revisada.', fix: 'Revísala y acéptala con --update-pins.' },
+  },
+  'tool-removed': {
+    en: { title: 'Tool removed since approval', explain: 'A previously approved tool is gone. Usually harmless.', fix: 'Confirm the server is the one you expect.' },
+    es: { title: 'Herramienta eliminada desde la aprobación', explain: 'Una herramienta aprobada ya no está. Normalmente no es un problema.', fix: 'Confirma que el servidor sea el que esperas.' },
+  },
+  'agent-tool': {
+    en: { title: 'Injected text made the agent use a tool', explain: 'Instructions hidden in content the agent was processing made it call a tool (send email, read files, move money) for the attacker. In production, that action would really happen.', fix: 'Require human approval for sensitive tools, give the agent only the tools it needs, and never let content it reads decide which tools to call.' },
+    es: { title: 'Un texto inyectado hizo que el agente usara una herramienta', explain: 'Instrucciones escondidas en el contenido que procesaba el agente lo llevaron a usar una herramienta (enviar correo, leer archivos, mover dinero) a favor del atacante. En producción, esa acción ocurriría de verdad.', fix: 'Exige aprobación humana para herramientas sensibles, dale al agente solo las herramientas que necesita y nunca dejes que el contenido que lee decida qué herramientas usar.' },
+  },
   agent: {
     en: {
       title: 'The agent obeys injected instructions',
@@ -329,6 +357,6 @@ const G = {
 };
 
 export function guidance(id, lang = 'en') {
-  const entry = G[id] ?? (id.startsWith('agent-') ? G.agent : null);
+  const entry = G[id] ?? (id.startsWith('agent-tool-') ? G['agent-tool'] : id.startsWith('agent-') ? G.agent : null);
   return entry ? entry[lang] ?? entry.en : null;
 }

@@ -2,6 +2,14 @@
 
 All notable changes to this project are documented here. Versions follow [Semantic Versioning](https://semver.org).
 
+## [0.4.0] - 2026-11-08
+
+### Added
+- **LLM judge** (`--llm`, `--llm-model`) for `mcp`, `config` and `skills`. Claude confirms, dismisses (lowers, never hides) or adds injection findings. The untrusted content is fenced so it cannot instruct the judge.
+- **Rug-pull detection** (`--pin <file>`, `--update-pins`). Tool fingerprints are pinned on first scan; later scans report changed, new and removed tools.
+- **32 agent probes** (up from 9) in 7 categories, including multi-turn conversations and tool-use attacks with fake `send_email`, `read_file` and `transfer_money` tools.
+- **Model API targets** for `probe agent`: `--target openai` (any OpenAI-compatible API) and `--target anthropic`, with `--model`, `--system` and `--categories`; `--history-field` for multi-turn on JSON endpoints.
+
 ## [0.3.0] - 2026-11-08
 
 ### Added
