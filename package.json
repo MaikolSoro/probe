@@ -1,6 +1,6 @@
 {
   "name": "@avenzoq/probe",
-  "version": "0.6.3",
+  "version": "0.7.0",
   "description": "Red-team your AI agents, MCP servers and skills before attackers do: tool poisoning, prompt injection, excessive agency, leaked secrets.",
   "keywords": [
     "mcp",

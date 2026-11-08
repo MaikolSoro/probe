@@ -61,6 +61,7 @@ probe mcp -- npx -y some-mcp-server@1.2.3       # scan one MCP server (stdio)
 probe mcp --url https://example.com/mcp         # scan a remote MCP server (Streamable HTTP)
 probe agent --url https://example.com/chat      # throw 32 attack probes at an agent
 probe skills ./some-skill-pack                  # review skills before installing them
+probe serve                                     # run Probe as an MCP server for your AI client
 ```
 
 <details>
@@ -161,6 +162,20 @@ It also lists every external domain the files reference.
 
 Offensive-security skill packs legitimately *describe* attacks. Probe's rules target instructions to **your** agent, not attack vocabulary, and lower the severity of commands that only appear in docs or comments.
 
+### Probe as an MCP server (`probe serve`)
+
+Let your AI assistant scan things for you. `probe serve` runs Probe itself as a stdio MCP server, so from Claude, Cursor or VS Code you can say *"check this MCP server before I install it"* and the assistant runs the scan. It exposes three **read-only** tools:
+
+- `scan_mcp_server` — analyse an MCP server's tool definitions (`url`, or `command` + `args`);
+- `scan_mcp_config` — audit your local MCP client configs (static by default; `connect: true` starts the servers);
+- `scan_skills` — review a skills/instructions folder.
+
+`probe agent` is **not** exposed: it actively attacks a live target, so an assistant must never be able to launch it at a third party. Add it to your client's MCP config:
+
+```json
+{ "mcpServers": { "probe": { "command": "npx", "args": ["-y", "@avenzoq/probe", "serve"] } } }
+```
+
 ### LLM judge (`--llm`)
 
 Patterns are fast but miss reworded attacks and sometimes flag harmless text. With `--llm`, Claude reviews every tool description, tool output and flagged skill excerpt:
@@ -207,7 +222,7 @@ probe mcp --pdf --lang es --client "Cliente S.A." --out reports/cliente -- node 
 | `--lang en\|es` | Report language |
 | `--client <name>` | Name on the cover |
 
-Each report has the overall risk, an executive summary, the scope and method, and every issue with **what it means** and **how to fix it** in plain language.
+Each report opens with the overall risk and an **executive summary for decision makers** — the single most important risk, a rough remediation effort and the recommended next step — then the scope and method, and every issue with **what it means** and **how to fix it** in plain language.
 
 ## Use it in CI
 

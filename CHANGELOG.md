@@ -2,6 +2,12 @@
 
 All notable changes to this project are documented here. Versions follow [Semantic Versioning](https://semver.org).
 
+## [0.7.0] - 2026-11-07
+
+### Added
+- **`probe serve`: run Probe as an MCP server.** An AI client (Claude, Cursor, VS Code) can now call Probe's static scans itself — "check this MCP server before I install it" — through three read-only tools: `scan_mcp_server`, `scan_mcp_config` and `scan_skills`. The active attack scanner (`probe agent`) is deliberately not exposed, so an agent can never launch prompt-injection attacks at a third party through it.
+- **Executive summary in the client report.** The HTML/PDF report now opens with a plain-language block for decision makers: the single most important risk, a rough remediation effort and the recommended next step, in Spanish or English.
+
 ## [0.6.3] - 2026-11-08
 
 ### Added

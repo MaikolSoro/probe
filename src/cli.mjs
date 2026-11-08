@@ -29,6 +29,8 @@ Usage:
                                                VS Code and Windsurf (starts each configured server)
   probe skills <path>                          Scan skills, slash commands, CLAUDE.md/AGENTS.md,
                                                hooks and install scripts before you install them
+  probe serve                                  Run Probe as an MCP server (stdio) so an AI client
+                                               can scan servers, configs and skills on request
 
 MCP and config options:
   --call-readonly     Also call tools marked read-only that take no arguments and
@@ -129,6 +131,15 @@ async function main() {
     return 0;
   }
   const [mode, ...modeArgs] = argv;
+
+  // `probe serve` runs Probe itself as an MCP server. It speaks MCP on stdout and
+  // keeps running, so it is handled before the one-shot scan modes below.
+  if (mode === 'serve') {
+    const { serve } = await import('./mcp-server.mjs');
+    await serve({ name: 'avenzoq-probe', version });
+    return new Promise(() => {}); // run until the transport closes
+  }
+
   const { opts, rest } = parse(modeArgs);
   const threshold = failThreshold(opts['fail-on']);
 

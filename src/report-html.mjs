@@ -25,6 +25,13 @@ const T = {
     overall: 'Overall risk',
     sev: { critical: 'Critical', high: 'High', medium: 'Medium', low: 'Low', none: 'No findings' },
     summary: 'Executive summary',
+    execTop: 'Most important risk',
+    execEffort: 'Estimated effort to fix',
+    execNext: 'Recommended next step',
+    execNextFix: (n) => `Fix the <strong>${n}</strong> critical or high issue${n === 1 ? '' : 's'} before this system goes to production, then re-scan to confirm.`,
+    execNextLow: 'No critical or high issues. Review the remaining items and re-scan after any change.',
+    execNextClean: 'Keep scanning after each change to the server, its tools or its configuration.',
+    effort: { days: 'A few days of work', hours: 'Hours to a couple of days', none: '—' },
     scope: 'Scope and method',
     overview: 'Findings overview',
     details: 'Findings in detail',
@@ -59,6 +66,13 @@ const T = {
     overall: 'Riesgo general',
     sev: { critical: 'Crítico', high: 'Alto', medium: 'Medio', low: 'Bajo', none: 'Sin hallazgos' },
     summary: 'Resumen ejecutivo',
+    execTop: 'Riesgo más importante',
+    execEffort: 'Esfuerzo estimado de corrección',
+    execNext: 'Siguiente paso recomendado',
+    execNextFix: (n) => `Corregir ${n === 1 ? 'el' : 'los'} <strong>${n}</strong> hallazgo${n === 1 ? '' : 's'} crítico${n === 1 ? '' : 's'} o alto${n === 1 ? '' : 's'} antes de llevar este sistema a producción, y volver a escanear para confirmar.`,
+    execNextLow: 'No hay hallazgos críticos ni altos. Revisar los puntos restantes y volver a escanear tras cualquier cambio.',
+    execNextClean: 'Seguir escaneando después de cada cambio en el servidor, sus herramientas o su configuración.',
+    effort: { days: 'Unos días de trabajo', hours: 'De horas a un par de días', none: '—' },
     scope: 'Alcance y método',
     overview: 'Resumen de hallazgos',
     details: 'Hallazgos en detalle',
@@ -84,6 +98,26 @@ const T = {
 
 // For agent findings the useful "where" is the probe that succeeded.
 const whereOf = (f) => (f.tool === '(agent)' ? `${f.tool} · ${f.id.replace(/^agent-/, '')}` : f.tool);
+
+// First sentence of a text, for a one-line business summary of the top risk.
+const firstSentence = (s = '') => (s.match(/^.*?[.!?](\s|$)/)?.[0] ?? s).trim();
+
+// The "for the boss" block: the single most serious issue in plain words, a rough
+// remediation effort and the recommended next step. Severity drives the effort band.
+function execBlock(t, items, c, lang) {
+  const serious = c.critical + c.high;
+  const effort = serious ? t.effort.days : items.length ? t.effort.hours : t.effort.none;
+  const next = serious ? t.execNextFix(serious) : items.length ? t.execNextLow : t.execNextClean;
+  const rows = [];
+  if (items.length) {
+    const top = items[0];
+    const g = guidance(top.id, lang) ?? { title: top.title, explain: top.detail };
+    rows.push([`${t.execTop} · ${t.sev[top.severity]}`, `<strong>${esc(g.title)}</strong>${g.explain ? ` — ${esc(firstSentence(g.explain))}` : ''}`]);
+  }
+  rows.push([t.execEffort, esc(effort)]);
+  rows.push([t.execNext, next]);
+  return `<dl class="exec">${rows.map(([k, v]) => `<dt>${esc(k)}</dt><dd>${v}</dd>`).join('')}</dl>`;
+}
 
 // Several matches of the same rule on the same tool become one card with all the evidence.
 function group(findings) {
@@ -167,6 +201,10 @@ export function toHtml(scan, { lang = 'en', client = '', date = new Date() } = {
   .risk .overall b { font-family: Geist; font-size: 15pt; }
   .dot { display: inline-block; width: 9px; height: 9px; border-radius: 50%; margin-right: 6px; }
   p { margin: 4px 0 8px; }
+  .exec { display: grid; grid-template-columns: auto 1fr; gap: 0; margin: 10px 0 4px; border: 1px solid var(--hairline); border-radius: 12px; overflow: hidden; break-inside: avoid; }
+  .exec dt { background: var(--mist); color: var(--muted); font-family: 'Geist Mono'; font-size: 7.6pt; text-transform: uppercase; letter-spacing: 0.06em; padding: 8px 12px; border-bottom: 1px solid var(--hairline); white-space: nowrap; }
+  .exec dd { margin: 0; padding: 8px 12px; border-bottom: 1px solid var(--hairline); font-size: 9.4pt; }
+  .exec dt:last-of-type, .exec dd:last-of-type { border-bottom: 0; }
   table { width: 100%; border-collapse: collapse; font-size: 9pt; }
   th { text-align: left; font-family: 'Geist Mono'; font-size: 7.5pt; letter-spacing: 0.08em; text-transform: uppercase; color: var(--muted); border-bottom: 1.5px solid var(--ink); padding: 5px 6px; }
   td { border-bottom: 1px solid var(--hairline); padding: 6px; vertical-align: top; }
@@ -208,6 +246,7 @@ export function toHtml(scan, { lang = 'en', client = '', date = new Date() } = {
 
   <h2><span class="idx">01</span>${t.summary}</h2>
   <p>${t.found(items.length, c)}</p>
+  ${execBlock(t, items, c, lang)}
 
   <h2><span class="idx">02</span>${t.scope}</h2>
   ${scope.map((s) => `<p>${esc(s)}</p>`).join('')}

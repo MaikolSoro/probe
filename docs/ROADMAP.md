@@ -41,6 +41,16 @@
 - Benchmark corpus and runner; stronger rules; pattern F1 went from 68 % to 90 % on the development set.
 - Research kit for State of MCP Security (isolated runner, aggregation, disclosure policy).
 
+## Done (v0.6.3, 2026-11-07): responsible use
+
+- Authorization gate on `probe agent` (confirm, or `--yes` for CI); non-interactive runs refuse without it.
+- INCONCLUSIVE result (exit 2) when every probe fails, so an unreachable target no longer reads as clean.
+
+## Done (v0.7.0, 2026-11-07): reach and sales
+
+- `probe serve`: Probe as a stdio MCP server, so an AI client can run the read-only scans itself (`scan_mcp_server`, `scan_mcp_config`, `scan_skills`). The active `agent` attack is intentionally not exposed.
+- Executive-summary block at the top of the client report (top risk, estimated effort, next step; es/en).
+
 ## Next (to make it useful for real users)
 
 1. **Run the State of MCP Security study:** start Docker, run `research/run.mjs`, review the criticals by hand, disclose, then publish the aggregate report.
