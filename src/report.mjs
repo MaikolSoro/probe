@@ -1,4 +1,6 @@
 // Turns a scan result into a terminal summary and a Markdown report.
+import { frameworkLine, FRAMEWORK_NOTE } from './compliance.mjs';
+
 export const ORDER = ['critical', 'high', 'medium', 'low'];
 
 const KIND = {
@@ -6,6 +8,7 @@ const KIND = {
   agent: 'Chat agent (prompt-injection probes)',
   skills: 'Agent skills and instruction files (static analysis)',
   config: 'MCP client configuration and configured servers',
+  docs: 'Documents an AI will read (static analysis for hidden instructions)',
 };
 
 const COLOR = { critical: '\x1b[35m', high: '\x1b[31m', medium: '\x1b[33m', low: '\x1b[36m' };
@@ -25,6 +28,7 @@ export function printSummary(scan, { color = process.stdout.isTTY } = {}) {
   if (scan.server) lines.push(`Server: ${scan.server} · ${scan.tools.length} tools`);
   if (scan.called) lines.push(`Read-only tools called: ${scan.called.length ? scan.called.map((c) => c.tool).join(', ') : 'none'}`);
   if (scan.kind === 'skills') lines.push(`Files: ${scan.files} · skills: ${scan.skills} · external domains: ${scan.domains.length}`);
+  if (scan.kind === 'docs') lines.push(`Documents: ${scan.files}`);
   if (scan.kind === 'config') {
     for (const src of scan.sources) lines.push(`Config: ${src.client} · ${src.file} · ${src.servers} servers`);
     for (const srv of scan.servers) lines.push(`  ${srv.name}: ${srv.status}`);
@@ -69,6 +73,7 @@ export function toMarkdown(scan, date = new Date()) {
   if (scan.inconclusive) out.push('', `> ⚠️ **Inconclusive scan.** ${scan.inconclusive} These results do not mean the target is secure.`, '');
   out.push('', '## Summary', '', '| Critical | High | Medium | Low |', '|---|---|---|---|', `| ${c.critical} | ${c.high} | ${c.medium} | ${c.low} |`, '');
 
+  if (scan.kind === 'docs') out.push(`Documents scanned: ${scan.files}.`, '');
   if (scan.kind === 'skills') out.push(`Files scanned: ${scan.files} (${scan.skills} skills). External domains referenced: ${scan.domains.join(', ') || 'none'}.`, '');
   if (scan.kind === 'config') {
     out.push('## Servers', '', '| Server | Status |', '|---|---|');
@@ -85,11 +90,14 @@ export function toMarkdown(scan, date = new Date()) {
   if (!scan.findings.length) out.push('No findings.');
   for (const f of sortFindings(scan.findings)) {
     out.push(`### [${f.severity.toUpperCase()}] ${f.title}`, '', `- **Where:** \`${f.tool}\``, `- **OWASP:** ${f.owasp}`);
+    const frameworks = frameworkLine(f.id);
+    if (frameworks) out.push(`- **Frameworks:** ${frameworks}`);
     if (f.llm) out.push(`- **LLM judge:** ${f.llm}`);
     out.push('', f.detail);
     if (f.evidence) out.push('', '```', f.evidence, '```');
     out.push('');
   }
+  if (scan.findings.some((f) => frameworkLine(f.id))) out.push(`_${FRAMEWORK_NOTE}_`, '');
   out.push('---', '', 'A clean report does not prove a system is secure; it means these checks found nothing. Only scan systems you own or are authorized to test.');
   return out.join('\n');
 }

@@ -358,6 +358,78 @@ const G = {
       fix: 'Separa las instrucciones de los datos, no pongas secretos en el prompt, dale al agente los permisos mínimos, exige aprobación humana en acciones sensibles y vuelve a probar con regularidad.',
     },
   },
+  'doc-hidden-instructions': {
+    en: {
+      title: 'Hidden instructions inside a document',
+      explain: 'The document contains text people cannot see (white or tiny text, hidden formatting, comments or metadata) that gives orders to an AI. An assistant or RAG system that reads the document treats that text as part of its context and may follow it.',
+      fix: 'Do not feed this document to an AI until the hidden text is removed. Strip comments, metadata and hidden formatting when documents enter your knowledge base, and keep the assistant from acting on instructions found inside content.',
+    },
+    es: {
+      title: 'Instrucciones ocultas dentro de un documento',
+      explain: 'El documento contiene texto que las personas no ven (texto blanco o diminuto, formato oculto, comentarios o metadatos) y que le da órdenes a una IA. Un asistente o un sistema RAG que lea el documento toma ese texto como parte de su contexto y puede obedecerlo.',
+      fix: 'No le entregues este documento a una IA hasta eliminar el texto oculto. Limpia comentarios, metadatos y formato oculto cuando los documentos entran a tu base de conocimiento, y evita que el asistente actúe según instrucciones encontradas dentro del contenido.',
+    },
+  },
+  'doc-injection': {
+    en: {
+      title: 'Document text gives instructions to an AI',
+      explain: 'Visible text in the document is written to change what an AI does. If the document is about prompt injection it may be a legitimate example; otherwise someone planted it for an assistant to read.',
+      fix: 'Confirm whether the text belongs there. If not, remove it before the document reaches an assistant, and treat document content as data, never as instructions.',
+    },
+    es: {
+      title: 'El texto del documento le da instrucciones a una IA',
+      explain: 'Hay texto visible en el documento escrito para cambiar lo que hace una IA. Si el documento trata sobre inyección de prompts puede ser un ejemplo legítimo; si no, alguien lo plantó para que un asistente lo lea.',
+      fix: 'Confirma si ese texto debe estar ahí. Si no, elimínalo antes de que el documento llegue a un asistente, y trata el contenido de los documentos como datos, nunca como instrucciones.',
+    },
+  },
+  'doc-hidden-text': {
+    en: {
+      title: 'Text hidden from people inside a document',
+      explain: 'The document has text that people cannot see but an AI reads. No instructions were recognized in it, but hidden text is a common way to plant them.',
+      fix: 'Review the hidden text by hand and remove it if it has no purpose.',
+    },
+    es: {
+      title: 'Texto oculto para las personas dentro de un documento',
+      explain: 'El documento tiene texto que las personas no ven pero que una IA sí lee. No se reconocieron instrucciones en él, pero el texto oculto es una forma común de plantarlas.',
+      fix: 'Revisa el texto oculto a mano y elimínalo si no tiene un propósito.',
+    },
+  },
+  'doc-invisible-characters': {
+    en: {
+      title: 'Invisible characters inside a document',
+      explain: 'Zero-width and direction-control characters can split words so filters miss them, or hide text from reviewers. They are normal in some right-to-left text.',
+      fix: 'Remove these characters when documents enter your knowledge base unless the language needs them.',
+    },
+    es: {
+      title: 'Caracteres invisibles dentro de un documento',
+      explain: 'Los caracteres de ancho cero y de control de dirección pueden partir palabras para que los filtros no las detecten, u ocultar texto a quien revisa. Son normales en algunos textos de derecha a izquierda.',
+      fix: 'Elimina estos caracteres cuando los documentos entran a tu base de conocimiento, salvo que el idioma los necesite.',
+    },
+  },
+  'doc-unreadable': {
+    en: {
+      title: 'Part of a document could not be checked',
+      explain: 'Probe could not read all of the text (a scanned page, an unusual font encoding or a damaged file), so this report does not cover it. An AI with OCR or vision may still read it.',
+      fix: 'Review that document by hand, or convert it to a text-based format and scan it again.',
+    },
+    es: {
+      title: 'Parte de un documento no se pudo revisar',
+      explain: 'Probe no pudo leer todo el texto (una página escaneada, una codificación de fuente poco común o un archivo dañado), así que este informe no lo cubre. Una IA con OCR o visión sí podría leerlo.',
+      fix: 'Revisa ese documento a mano, o conviértelo a un formato con texto y vuelve a escanearlo.',
+    },
+  },
+  'cross-server-flow': {
+    en: {
+      title: 'Dangerous combination of tools across MCP servers',
+      explain: 'Each server may look safe alone, but an agent connected to all of them can read private data with one and send it out with another. When one of them also reads content from strangers (web, email, issues), a single hidden instruction is enough to leak data.',
+      fix: 'Do not connect these servers to the same agent, or require human approval for every outbound action. Give each agent only the servers its task needs.',
+    },
+    es: {
+      title: 'Combinación peligrosa de herramientas entre servidores MCP',
+      explain: 'Cada servidor puede parecer seguro por separado, pero un agente conectado a todos puede leer datos privados con uno y enviarlos afuera con otro. Si además uno lee contenido de terceros (web, correo, issues), basta una instrucción escondida para filtrar datos.',
+      fix: 'No conectes estos servidores al mismo agente, o exige aprobación humana para toda acción que envíe datos afuera. Dale a cada agente solo los servidores que su tarea necesita.',
+    },
+  },
 };
 
 export function guidance(id, lang = 'en') {

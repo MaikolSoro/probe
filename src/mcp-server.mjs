@@ -1,6 +1,6 @@
 // Exposes Probe's static scans as an MCP server, so an AI client (Claude, Cursor,
-// VS Code) can scan an MCP server, a local client config or a skills folder on
-// request: "check this MCP server before I install it" and the agent runs Probe.
+// VS Code) can scan an MCP server, a local client config, a skills folder or
+// documents on request: "check this MCP server before I install it" and the agent runs Probe.
 //
 // Only the read-only, static scans are exposed. `probe agent` actively attacks a
 // live target, so it is deliberately NOT available here: an agent must never be
@@ -11,6 +11,7 @@ import { StdioServerTransport } from '@modelcontextprotocol/sdk/server/stdio.js'
 import { scanMcp } from './mcp-scan.mjs';
 import { scanConfigs } from './config-scan.mjs';
 import { scanSkills } from './skills-scan.mjs';
+import { scanDocs } from './docs-scan.mjs';
 import { printSummary, counts } from './report.mjs';
 
 // A scan result becomes an MCP tool result: the plain-text summary (no ANSI colour,
@@ -87,6 +88,26 @@ export function buildServer({ name = 'avenzoq-probe', version = '0.0.0' } = {}) 
     async ({ path }) => {
       try {
         return toolResult(scanSkills(path));
+      } catch (err) {
+        return fail(err.message);
+      }
+    },
+  );
+
+  server.registerTool(
+    'scan_documents',
+    {
+      title: 'Scan documents for hidden AI instructions',
+      description:
+        'Statically scan a document or a folder of documents (PDF, Word, PowerPoint, Excel, HTML, Markdown, text) before an AI assistant or RAG pipeline reads them: instructions hidden in white or tiny text, invisible PDF text, hidden formatting or CSS, comments, metadata and invisible Unicode. Nothing is executed.',
+      inputSchema: {
+        path: z.string().describe('Path to a document or a folder of documents'),
+      },
+      annotations: { readOnlyHint: true, openWorldHint: false },
+    },
+    async ({ path }) => {
+      try {
+        return toolResult(scanDocs(path));
       } catch (err) {
         return fail(err.message);
       }

@@ -6,6 +6,7 @@ import { dirname, join } from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 import { ORDER, counts } from './report.mjs';
 import { guidance } from './guidance.mjs';
+import { frameworkLine } from './compliance.mjs';
 
 const assets = join(dirname(fileURLToPath(import.meta.url)), '..', 'assets');
 const asset = (file, type) => `data:${type};base64,${readFileSync(join(assets, file)).toString('base64')}`;
@@ -22,6 +23,8 @@ const T = {
     agent: 'AI chat agent',
     skills: 'Agent skills and instruction files',
     config: 'MCP client configuration',
+    docs: 'Documents an AI will read',
+    frameworks: 'Frameworks',
     overall: 'Overall risk',
     sev: { critical: 'Critical', high: 'High', medium: 'Medium', low: 'Low', none: 'No findings' },
     summary: 'Executive summary',
@@ -51,6 +54,7 @@ const T = {
     scopeAgent: (n) => `${n} attack probes were run against the agent. Each one tries to make the agent follow untrusted instructions and carries a random code; if the code comes back, the agent obeyed.`,
     scopeSkills: (n, k, d) => `Static analysis of ${n} files (${k} skills): instruction text aimed at the agent, invisible characters, scripts that download and run code, writes to sensitive files, hooks and MCP installs. Nothing was executed. External domains referenced: ${d || 'none'}.`,
     scopeConfig: (list) => `Review of the MCP servers configured in local AI clients (${list}), including secrets in plain text, unpinned packages and insecure transport, plus the static tool checks on each server that could be started.`,
+    scopeDocs: (n) => `Static analysis of ${n} document${n === 1 ? '' : 's'} an AI assistant or RAG pipeline would read (PDF, Office, HTML, Markdown, text), looking for instructions hidden from people: white or tiny text, invisible rendering, hidden formatting or CSS, comments, metadata and invisible Unicode. Nothing was executed.`,
     disclaimer: 'This report covers only the checks listed above, on the date shown. A clean result does not guarantee that a system is secure. Tests were run only on systems the client owns or authorized.',
   },
   es: {
@@ -63,6 +67,8 @@ const T = {
     agent: 'Agente de chat con IA',
     skills: 'Skills e instrucciones de agentes',
     config: 'Configuración de clientes MCP',
+    docs: 'Documentos que leerá una IA',
+    frameworks: 'Marcos de referencia',
     overall: 'Riesgo general',
     sev: { critical: 'Crítico', high: 'Alto', medium: 'Medio', low: 'Bajo', none: 'Sin hallazgos' },
     summary: 'Resumen ejecutivo',
@@ -92,6 +98,7 @@ const T = {
     scopeAgent: (n) => `Se ejecutaron ${n} ataques de prueba contra el agente. Cada uno intenta que el agente siga instrucciones no confiables y lleva un código aleatorio; si el código vuelve en la respuesta, el agente obedeció.`,
     scopeSkills: (n, k, d) => `Análisis estático de ${n} archivos (${k} skills): texto dirigido al agente, caracteres invisibles, scripts que descargan y ejecutan código, escritura en archivos sensibles, hooks e instalación de servidores MCP. No se ejecutó nada. Dominios externos referenciados: ${d || 'ninguno'}.`,
     scopeConfig: (list) => `Revisión de los servidores MCP configurados en los clientes de IA locales (${list}): secretos en texto plano, paquetes sin versión fija y transporte inseguro, más las pruebas estáticas de herramientas en cada servidor que se pudo iniciar.`,
+    scopeDocs: (n) => `Análisis estático de ${n} documento${n === 1 ? '' : 's'} que leería un asistente de IA o un sistema RAG (PDF, Office, HTML, Markdown, texto), buscando instrucciones ocultas para las personas: texto blanco o diminuto, texto invisible, formato o CSS oculto, comentarios, metadatos y Unicode invisible. No se ejecutó nada.`,
     disclaimer: 'Este informe cubre solo las pruebas descritas, en la fecha indicada. Un resultado limpio no garantiza que un sistema sea seguro. Las pruebas se hicieron únicamente sobre sistemas del cliente o con su autorización.',
   },
 };
@@ -144,6 +151,7 @@ export function toHtml(scan, { lang = 'en', client = '', date = new Date() } = {
     if (scan.called?.length) scope.push(t.scopeCalled(scan.called.map((x) => x.tool).join(', ')));
   } else if (scan.kind === 'skills') scope.push(t.scopeSkills(scan.files, scan.skills, scan.domains.join(', ')));
   else if (scan.kind === 'config') scope.push(t.scopeConfig(scan.sources.map((x) => x.client).join(', ') || '—'));
+  else if (scan.kind === 'docs') scope.push(t.scopeDocs(scan.files));
   else scope.push(t.scopeAgent(scan.results.length));
 
   const card = (f, i) => {
@@ -153,6 +161,7 @@ export function toHtml(scan, { lang = 'en', client = '', date = new Date() } = {
       <dl>
         <dt>${t.where}</dt><dd class="mono">${esc(whereOf(f))}</dd>
         <dt>OWASP</dt><dd>${esc(f.owasp)}</dd>
+        ${frameworkLine(f.id) ? `<dt>${t.frameworks}</dt><dd>${esc(frameworkLine(f.id))}</dd>` : ''}
         ${f.llm ? `<dt>${t.judge}</dt><dd>${esc(f.llm)}</dd>` : ''}
       </dl>
       <h4>${t.what}</h4><p>${esc(g.explain)}</p>

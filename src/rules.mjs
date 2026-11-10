@@ -56,12 +56,12 @@ const CAPABILITIES = [
 ];
 
 // "foo_bar" and "fooBar" become "foo bar" so word-boundary patterns match tool names.
-const words = (s = '') => s.replace(/[_\-.]/g, ' ').replace(/([a-z])([A-Z])/g, '$1 $2');
+export const words = (s = '') => s.replace(/[_\-.]/g, ' ').replace(/([a-z])([A-Z])/g, '$1 $2');
 
 // What a tool *does* is in its name and first sentence; the rest of a long
 // description mentions options, errors and other tools ("excludeDomains to
 // remove domains", "lacks the read/update capability"), which caused false hits.
-const firstSentence = (s = '') => s.trim().split(/(?<=[.!?])\s|\n/)[0].slice(0, 200);
+export const firstSentence = (s = '') => s.trim().split(/(?<=[.!?])\s|\n/)[0].slice(0, 200);
 
 export function capabilitiesOf(tool) {
   const text = `${words(tool.name)} ${firstSentence(tool.description)}`;

@@ -15,11 +15,11 @@ async function withServer(fn) {
   }
 }
 
-test('probe serve exposes the three static scan tools, and no agent attack tool', async () => {
+test('probe serve exposes the four static scan tools, and no agent attack tool', async () => {
   await withServer(async (client) => {
     const { tools } = await client.listTools();
     const names = tools.map((t) => t.name).sort();
-    assert.deepEqual(names, ['scan_mcp_config', 'scan_mcp_server', 'scan_skills']);
+    assert.deepEqual(names, ['scan_documents', 'scan_mcp_config', 'scan_mcp_server', 'scan_skills']);
     // The active attack scanner must never be reachable through the MCP server.
     assert.ok(!names.some((n) => n.includes('agent')));
     for (const t of tools) assert.ok(t.annotations?.readOnlyHint, `${t.name} should be read-only`);

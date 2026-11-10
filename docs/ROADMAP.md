@@ -56,12 +56,20 @@
 - `probe diff <before.json> <after.json>`: resolved / new / still-present, with before/after counts — proof of value for a client.
 - `probe authorization`: the signable "authorization to test" document (es/en), Markdown + branded HTML/PDF. A template, not legal advice.
 
+## Done (v0.9.0, 2026-11-10): documents, toxic flows, compliance
+
+- `probe docs`: hidden instructions in PDF, Office, HTML, Markdown and text files (white/tiny/invisible text, hidden formatting and slides, CSS, comments, metadata, Unicode tag characters). Zero false positives on 117 real downloaded files and 145 `node_modules` docs.
+- Toxic flows across MCP servers in `probe config` (`cross-server-flow`).
+- OWASP Agentic Top 10 (2026) and MITRE ATLAS mapping in reports and SARIF.
+
 ## Next (to make it useful for real users)
 
 1. **Run the State of MCP Security study:** start Docker, run `research/run.mjs`, review the criticals by hand, disclose, then publish the aggregate report.
 2. **Held-out benchmark:** new cases written without looking at the rules, plus an LLM-judge column.
 3. **LLM judge for agent replies:** classify partial leaks and soft compliance that canaries miss.
-4. **Probe pack in Spanish and Portuguese**, for the Latin American market and as a differentiator.
+4. **Probe pack in Spanish and Portuguese**, for the Latin American market and as a differentiator. The static rules recognize English instructions plus a few Spanish/Portuguese phrases; `probe docs` found a Spanish "ignora todas las instrucciones anteriores" only through another phrase in the same text. Adding Spanish/Portuguese injection patterns (with benign near-misses in `bench/`) also strengthens `probe docs`.
+5. **`probe docs` follow-ups:** text placed off the page in PDFs, hidden Excel sheets and white-font cells, `.eml` email files, and an `--llm` pass over document text (`extractDocument` is exported for it).
+6. **AI inventory (`probe inventory`)**, remote MCP checks (unauthenticated access, CORS, `0.0.0.0`), MCP package supply chain, tripartite `probe authorization` (vendor as a signer).
 
 ## Later (product)
 

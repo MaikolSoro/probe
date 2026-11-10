@@ -7,6 +7,7 @@ import { scanMcp } from './mcp-scan.mjs';
 import { scanAgent } from './agent-scan.mjs';
 import { scanSkills } from './skills-scan.mjs';
 import { scanConfigs } from './config-scan.mjs';
+import { scanDocs } from './docs-scan.mjs';
 import { printSummary, toMarkdown, ORDER } from './report.mjs';
 import { toHtml, htmlToPdf } from './report-html.mjs';
 import { toSarif } from './sarif.mjs';
@@ -31,6 +32,8 @@ Usage:
                                                VS Code and Windsurf (starts each configured server)
   probe skills <path>                          Scan skills, slash commands, CLAUDE.md/AGENTS.md,
                                                hooks and install scripts before you install them
+  probe docs <path>                            Scan documents an AI will read (PDF, Word, PowerPoint,
+                                               Excel, HTML, Markdown, text) for hidden instructions
   probe serve                                  Run Probe as an MCP server (stdio) so an AI client
                                                can scan servers, configs and skills on request
   probe diff <before.json> <after.json>        Compare two report.json files (resolved / new / still there)
@@ -207,6 +210,8 @@ async function main() {
     scan = await scanMcp({ url: opts.url, command: rest[0], args: rest.slice(1), callReadonly: opts.callReadonly, pins, llm, timeoutMs });
   } else if (mode === 'config') {
     scan = await scanConfigs({ paths: opts.path ? [opts.path] : undefined, connect: !opts.noConnect, pins, llm, timeoutMs });
+  } else if (mode === 'docs' && rest[0]) {
+    scan = scanDocs(rest[0]);
   } else if (mode === 'skills' && rest[0]) {
     scan = scanSkills(rest[0]);
     if (llm) scan = await judgeSkills(scan, llm);

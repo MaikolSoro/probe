@@ -6,6 +6,7 @@ import { homedir } from 'node:os';
 import { join } from 'node:path';
 import { scanMcp } from './mcp-scan.mjs';
 import { OWASP } from './rules.mjs';
+import { checkFlows } from './flows.mjs';
 
 const home = homedir();
 
@@ -100,6 +101,7 @@ export async function scanConfigs({ paths, connect = true, timeoutMs = 20000, pi
   const sources = [];
   const findings = [];
   const servers = [];
+  const connected = [];
 
   for (const [client, file] of configs) {
     if (!existsSync(file)) continue;
@@ -127,12 +129,15 @@ export async function scanConfigs({ paths, connect = true, timeoutMs = 20000, pi
           },
         );
         entry.status = `ok · ${scan.tools.length} tools${scan.pins ? ` · ${scan.pins}` : ''}`;
+        connected.push({ name: label, definitions: scan.definitions });
         findings.push(...scan.findings.map((f) => ({ ...f, tool: `${label} › ${f.tool}` })));
       } catch (err) {
         entry.status = `error: ${err.message}`;
       }
     }
   }
+
+  findings.push(...checkFlows(connected));
 
   return { target: sources.map((s) => s.file).join(', ') || '(no MCP config found)', kind: 'config', sources, servers, findings };
 }

@@ -2,6 +2,13 @@
 
 All notable changes to this project are documented here. Versions follow [Semantic Versioning](https://semver.org).
 
+## [0.9.0] - 2026-11-10
+
+### Added
+- **`probe docs <path>`: hidden instructions in documents.** Scan PDF, Word, PowerPoint, Excel, HTML, Markdown, text and CSV files before an assistant or RAG pipeline reads them. It finds instructions hidden in white or tiny text, invisible PDF text, hidden Word formatting, hidden slides, CSS-hidden HTML, comments, speaker notes, metadata and Unicode tag characters (decoded), plus visible text aimed at the model. PDF text is decoded with each font's Unicode map and glyph widths. Files Probe cannot read are reported as such, never as clean. No new dependencies. Also available to AI clients as the `scan_documents` tool in `probe serve`.
+- **Toxic flows across MCP servers** (`probe config`): a new `cross-server-flow` finding when one configured server reads private data and another can send it out (medium), or when a third also reads content from strangers (high).
+- **Framework mapping:** every finding is mapped to the OWASP Top 10 for Agentic Applications (2026) and MITRE ATLAS, in the Markdown and HTML/PDF reports and as SARIF tags. The mapping is indicative.
+
 ## [0.8.0] - 2026-11-08
 
 ### Added

@@ -61,6 +61,7 @@ probe mcp -- npx -y some-mcp-server@1.2.3       # scan one MCP server (stdio)
 probe mcp --url https://example.com/mcp         # scan a remote MCP server (Streamable HTTP)
 probe agent --url https://example.com/chat      # throw 32 attack probes at an agent
 probe skills ./some-skill-pack                  # review skills before installing them
+probe docs ./knowledge-base                     # find hidden instructions in PDFs, Office files, HTML
 probe serve                                     # run Probe as an MCP server for your AI client
 ```
 
@@ -150,6 +151,8 @@ Tool-use probes need `--target openai` or `--target anthropic`. Multi-turn probe
 
 It then runs the MCP checks on every server it can start. `--path <file>` scans a specific config file.
 
+**Toxic flows across servers.** Each server can look harmless alone, but your agent combines all of them. If one server reads private data (files, CRM, inbox) and *another* can send data out (email, HTTP, chat), Probe reports a `cross-server-flow` (medium). When a third tool also reads content written by strangers (web pages, email, issues, reviews), that is the full "untrusted input + private data + way out" combination an injected instruction needs, and it is reported as high.
+
 ### Agent skills
 
 `probe skills <path>` reviews skill packs, slash commands, `CLAUDE.md` / `AGENTS.md`, Cursor rules, hook configs and install scripts. It looks for:
@@ -162,13 +165,30 @@ It also lists every external domain the files reference.
 
 Offensive-security skill packs legitimately *describe* attacks. Probe's rules target instructions to **your** agent, not attack vocabulary, and lower the severity of commands that only appear in docs or comments.
 
+### Documents an AI will read (`probe docs`)
+
+Before a PDF, a Word file or a web page goes into your knowledge base, RAG pipeline or assistant, check it for instructions hidden from people:
+
+```bash
+probe docs ./supplier-docs                     # a folder: PDF, DOCX, PPTX, XLSX, HTML, Markdown, TXT, CSV
+probe docs quote.pdf --html --lang es          # one file, with the client-ready report
+```
+
+It reads the files as data (no external tools, nothing executed) and reports:
+- **hidden instructions** (critical): text aimed at the model in white or tiny text, invisible PDF text, Word hidden formatting, hidden slides, CSS-hidden HTML, comments, speaker notes, metadata, or **Unicode tag characters** ("ASCII smuggling"), which are decoded;
+- **visible instructions** (high): document text that talks to the model. A document *about* prompt injection will trigger this on purpose; suppress it with `.probeignore`;
+- **hidden text** without instructions (low), invisible characters (medium), and anything Probe **could not read** (a scanned page, an unusual font encoding), so an unreadable file is never reported as clean.
+
+PDF text is decoded with each font's Unicode map and glyph widths, so PDFs from Chrome, Word and most generators read correctly. White text and invisible OCR layers alone are normal in real documents and are only reported when they carry instructions. On a test set of 117 real downloaded files (designs, invoices, Office files) it reported nothing; on 145 Markdown/HTML files from `node_modules`, nothing either.
+
 ### Probe as an MCP server (`probe serve`)
 
-Let your AI assistant scan things for you. `probe serve` runs Probe itself as a stdio MCP server, so from Claude, Cursor or VS Code you can say *"check this MCP server before I install it"* and the assistant runs the scan. It exposes three **read-only** tools:
+Let your AI assistant scan things for you. `probe serve` runs Probe itself as a stdio MCP server, so from Claude, Cursor or VS Code you can say *"check this MCP server before I install it"* and the assistant runs the scan. It exposes four **read-only** tools:
 
 - `scan_mcp_server` — analyse an MCP server's tool definitions (`url`, or `command` + `args`);
 - `scan_mcp_config` — audit your local MCP client configs (static by default; `connect: true` starts the servers);
-- `scan_skills` — review a skills/instructions folder.
+- `scan_skills` — review a skills/instructions folder;
+- `scan_documents` — check documents for hidden instructions before the assistant reads them.
 
 `probe agent` is **not** exposed: it actively attacks a live target, so an assistant must never be able to launch it at a third party. Add it to your client's MCP config:
 
@@ -207,6 +227,8 @@ probe mcp --pin probe.pins.json --update-pins -- …             # accept a revi
 Commit the pin file so CI catches changes.
 
 ## Client-ready reports
+
+Every finding is mapped to the **OWASP Top 10 for LLM Applications (2025)**, the **OWASP Top 10 for Agentic Applications (2026)** and **MITRE ATLAS** techniques, in the Markdown and HTML/PDF reports and as SARIF tags (`ASI01`, `AML.T0051.001`…). That turns a scan into evidence for an AI-security or compliance review. The mapping is indicative; check it against the current version of each framework before using it in an audit.
 
 ```bash
 probe mcp --pdf --lang es --client "Cliente S.A." --out reports/cliente -- node server.js
@@ -345,6 +367,7 @@ Everything is plain Node.js ESM, with no build step. The only dependencies are t
 
 - The checks are **pattern-based**. They catch known poisoning techniques and risky designs, not every possible attack. Expect some false positives on legitimate tools that really send email or run commands.
 - Agent probes test one conversation at a time. Tool-use probes use fake tools and report the *attempt*; they never execute anything.
+- `probe docs` reads text, not pixels: text drawn as an image, or hidden by covering it with a shape, is not detected. Text placed off the page in a PDF and hidden worksheets in Excel are not checked yet.
 - The LLM judge is itself an LLM. It reduces noise but can be wrong, so review its reasoning in the report.
 - **A clean report is not a guarantee.** It means none of these checks found a problem.
 
@@ -356,6 +379,9 @@ Everything is plain Node.js ESM, with no build step. The only dependencies are t
 - [x] `.probeignore` and `--fail-on`
 - [x] LLM judge (`--llm`)
 - [x] Public benchmark (`bench/`)
+- [x] Hidden instructions in documents (`probe docs`)
+- [x] Toxic flows across MCP servers
+- [x] OWASP Agentic Top 10 and MITRE ATLAS mapping
 - [ ] "State of MCP Security" report (kit ready in `research/`)
 - [ ] **Guard:** a runtime policy firewall between agents and their tools
 
