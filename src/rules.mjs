@@ -1,6 +1,9 @@
 // Static checks for MCP tool definitions. Each rule looks only at what the
 // server advertises (name, description, input schema, annotations); no tool is
 // ever called, so scanning has no side effects on the target.
+import en from './rules/en.mjs';
+import es from './rules/es.mjs';
+import pt from './rules/pt.mjs';
 
 export const OWASP = {
   LLM01: 'LLM01:2025 Prompt Injection',
@@ -9,29 +12,40 @@ export const OWASP = {
   LLM07: 'LLM07:2025 System Prompt Leakage',
 };
 
-const SECRET = String.raw`(~\/\.ssh|\.ssh\b|id_rsa|(?<![\w.-])\.env(?![\w.])|\.aws\/credentials|api[_ -]?keys?|private key|credentials)`;
-
-const INJECTION_PATTERNS = [
-  [/ignore (all |any )?(previous|prior|above|earlier) (instructions|rules|messages)/i, 'tells the model to ignore its instructions'],
-  [/<\s*\/?\s*(important|system|secret|instructions?)\s*>/i, 'contains pseudo-system tags such as <IMPORTANT>'],
-  [/(do not|don't|never) (tell|mention|inform|reveal to|show) (the )?user/i, 'asks the model to hide something from the user'],
-  // Chaining hints ("before using this tool, call list_x") are normal; reading or sending data first is not.
-  [/before (using|calling) (this|any other) tool[^.]{0,80}\b(read|send|include|pass|attach|upload)\b/i, 'tries to change how other tools are used'],
-  [/(whenever|every time|each time|when) (the )?[\w.-]+ tool is (used|called)|(never|do not|don't) call [\w.-]+ directly|\b(supersedes|replaces|overrides) (the |all )?(other )?(tools?|servers?)\b/i, 'tries to change how other tools are used'],
-  // Mentioning a secret is fine ("lists API key names"); acting on it is what matters.
-  [new RegExp(String.raw`\b(read|send|pass|include|attach|upload|copy|forward|cat|leak|lee|leer|envía|envia|enviar|adjunta|incluye|copia|sube|leia|envie|anexe|inclua|copie)\b[^.]{0,80}` + SECRET, 'i'), 'tells the model to read or send secrets or credential files'],
-  // Spanish and Portuguese: "no le digas (nada) al usuario", "não diga ao usuário".
-  [/\b(no le digas|no le menciones|no informes|sin decirle|não (diga|conte|informe|mencione))\b[^.]{0,30}\b(usuario|usuária|usuário|cliente)\b/i, 'asks the model to hide something from the user'],
-  // Must move *data* (conversation, files, secrets…) somewhere; "include a word in the URL" is search syntax.
-  [/\b(send|forward|copy|include|append|put|pass)\b (the |all |its |their |your )?(full |entire |whole )?(conversation|chat|history|context|contents?|data|messages|secrets?|keys?|tokens?|credentials|files?|documents?)\b[^.]{0,40}\b(to|in|into|as) (the )?(sidenote|notes?|parameter|field|http|url|webhook)/i, 'asks the model to move data into a parameter or URL'],
-  [/!\[[^\]]*\]\(https?:\/\//i, 'embeds an external image, a classic data-exfiltration channel'],
-  [/\b(ask|request|prompt) (the user|them|the customer) for (their |the |a )?[\w ]{0,25}(password|passcode|pin|otp|2fa|verification code|seed phrase|card number)/i, 'tells the model to ask the user for credentials'],
-  [/\b(note|message|instructions?) (to|for) the (ai|assistant|model|llm)\b|\bfrom now on,? you (are|must|will)\b|\byou are now in\b/i, 'speaks directly to the model to change its behavior'],
-  [/[A-Za-z0-9+/]{80,}={0,2}/, 'contains a long encoded blob that can hide instructions'],
+// Injection patterns live in language packs (rules/*.mjs) as data; each rule
+// below collects the patterns every pack gives for its key. Order matters: it
+// is the order findings are reported in.
+const PACKS = [en, es, pt];
+const RULES = [
+  ['ignore-instructions', 'tells the model to ignore its instructions'],
+  ['pseudo-tags', 'contains pseudo-system tags such as <IMPORTANT>'],
+  ['hide-from-user', 'asks the model to hide something from the user'],
+  ['steer-other-tools', 'tries to change how other tools are used'],
+  ['override-other-tools', 'tries to change how other tools are used'],
+  ['secrets', 'tells the model to read or send secrets or credential files'],
+  ['move-data', 'asks the model to move data into a parameter or URL'],
+  ['image-exfil', 'embeds an external image, a classic data-exfiltration channel'],
+  ['ask-credentials', 'tells the model to ask the user for credentials'],
+  ['address-model', 'speaks directly to the model to change its behavior'],
+  ['encoded-blob', 'contains a long encoded blob that can hide instructions'],
 ];
 
-const STEERING =
-  /\b((you )?(should|must) always|always) (default to )?(us(e|ing)|call(ing)?|prefer(ring)?) this tool\b|\b(call|use|run) this (tool )?(immediately|first|right after|before any)\b|\b(call|use) this immediately\b|\bthis is the (most powerful|best|only|preferred) [\w\s-]{0,30}tool\b|\b(instead of|rather than|over) (using )?(any |all )?other (\w+ )?tools\b|\bprefer this tool\b/i;
+// One pattern per rule: a single pattern is used as is, several are joined as alternatives.
+function combine(patterns) {
+  if (patterns.length === 1) return patterns[0];
+  const flags = [...new Set(patterns.flatMap((p) => [...p.flags]))].join('');
+  return new RegExp(patterns.map((p) => `(?:${p.source})`).join('|'), flags);
+}
+
+const patternsFor = (key) => PACKS.flatMap((pack) => pack.patterns[key] ?? []);
+const SECRETS = new RegExp(
+  String.raw`\b(${PACKS.flatMap((p) => p.secretVerbs).join('|')})\b[^.]{0,80}(${PACKS.flatMap((p) => p.secretTargets).join('|')})`,
+  'i',
+);
+
+const INJECTION_PATTERNS = RULES.map(([key, why]) => [key === 'secrets' ? SECRETS : combine(patternsFor(key)), why]);
+
+const STEERING = combine(patternsFor('steering'));
 
 const INVISIBLE_CHARS = /[​-‏‪-‮⁠-⁤﻿]/;
 

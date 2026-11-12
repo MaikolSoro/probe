@@ -2,6 +2,13 @@
 
 All notable changes to this project are documented here. Versions follow [Semantic Versioning](https://semver.org).
 
+## [0.9.1] - 2026-11-12
+
+### Changed
+- **Injection patterns are data, by language.** The patterns behind `tool-poisoning`, tool-output checks and `probe docs` now live in `src/rules/en.mjs`, `es.mjs` and `pt.mjs`; the engine joins every pack's patterns for the same rule. Same detections as before (bench F1 unchanged at 90 %); in text with both an English and a Spanish/Portuguese "don't tell the user" phrase they now count as one finding instead of two, and in Spanish text that finding is listed before the secrets one.
+- **CLI options are parsed with Node's built-in `parseArgs`.** Every documented command reads the same as before. An unknown option (a typo such as `--outt`) or a missing value is now an error (exit 2) instead of being silently ignored. A value that starts with a dash needs the `--option=-value` form.
+- Internal: `src/docs-scan.mjs` is split into `src/docs/pdf.mjs`, `ooxml.mjs`, `html.mjs` and `shared.mjs`; `npm run typecheck` type-checks `src/` from JSDoc with TypeScript (dev-only dependency, nothing added for users).
+
 ## [0.9.0] - 2026-11-10
 
 ### Added

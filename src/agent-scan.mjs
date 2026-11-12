@@ -13,6 +13,7 @@ const DEFAULT_SYSTEM =
 // A failed request keeps its HTTP status, so a scan that could not run says why
 // (403, 404, not JSON…) instead of looking like a clean "No findings".
 class RequestError extends Error {
+  /** @param {string} message @param {{ status?: number, kind?: string }} [info] */
   constructor(message, { status, kind } = {}) {
     super(message);
     this.status = status;
@@ -70,6 +71,7 @@ export function makeTarget(opts) {
       name: `openai · ${opts.model}`,
       supportsHistory: true,
       supportsTools: true,
+      /** @param {object[]} messages @param {{ tools?: boolean }} [options] */
       async send(messages, { tools } = {}) {
         const body = { model: opts.model, messages: [{ role: 'system', content: system }, ...messages] };
         if (tools) body.tools = FAKE_TOOLS.map((t) => ({ type: 'function', function: { name: t.name, description: t.description, parameters: t.input_schema } }));
@@ -96,6 +98,7 @@ export function makeTarget(opts) {
       name: `anthropic · ${opts.model}`,
       supportsHistory: true,
       supportsTools: true,
+      /** @param {object[]} messages @param {{ tools?: boolean }} [options] */
       async send(messages, { tools } = {}) {
         const body = { model: opts.model, max_tokens: 600, system, messages };
         if (tools) body.tools = FAKE_TOOLS;

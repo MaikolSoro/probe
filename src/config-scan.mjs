@@ -95,6 +95,14 @@ export function checkServerConfig(name, cfg) {
   return findings;
 }
 
+/**
+ * @param {object} [options]
+ * @param {string[]} [options.paths] config files to read instead of the known locations
+ * @param {boolean} [options.connect] start each server and scan its tools
+ * @param {number} [options.timeoutMs]
+ * @param {{ file: string, data: object, update?: boolean, key?: string }} [options.pins]
+ * @param {{ model: string }} [options.llm]
+ */
 export async function scanConfigs({ paths, connect = true, timeoutMs = 20000, pins, llm } = {}) {
   timeoutMs ??= 20000;
   const configs = paths ? paths.map((p) => ['Custom', p]) : KNOWN_CONFIGS;

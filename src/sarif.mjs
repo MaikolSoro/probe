@@ -17,6 +17,7 @@ function locationOf(finding, scan, anchor) {
   return { uri: anchor ?? fromTarget ?? 'package.json', line: 1 };
 }
 
+/** @param {object} scan @param {{ version?: string, anchor?: string }} [options] */
 export function toSarif(scan, { version, anchor } = {}) {
   const rules = new Map();
   const results = scan.findings.map((f) => {

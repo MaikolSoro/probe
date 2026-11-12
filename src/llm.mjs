@@ -15,7 +15,7 @@ export async function callClaude({ system, prompt, model = DEFAULT_MODEL, apiKey
     body: JSON.stringify({ model, max_tokens: maxTokens, system, messages: [{ role: 'user', content: prompt }] }),
     signal: AbortSignal.timeout(90000),
   });
-  const data = await res.json();
+  const data = /** @type {any} */ (await res.json());
   if (!res.ok) throw new Error(`LLM judge: ${data.error?.message ?? `HTTP ${res.status}`}`);
   return data.content.filter((c) => c.type === 'text').map((c) => c.text).join('');
 }
@@ -42,6 +42,7 @@ function fence(label, text) {
 }
 
 // items: [{ key, kind, text }] → Map(key → { verdict, reason, quote })
+/** @param {{ key: string, kind: string, text: string }[]} items @param {{ call?: Function, model?: string }} [options] */
 export async function judgeItems(items, { call = callClaude, model } = {}) {
   const verdicts = new Map();
   // Batches keep each request small and let one bad response fail only part of the run.

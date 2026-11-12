@@ -18,6 +18,7 @@ import { judgeSkills } from './skills-scan.mjs';
 import { diffScans, printDiff, diffToMarkdown } from './diff.mjs';
 import { authorizationMarkdown, authorizationHtml } from './authorization.mjs';
 import { createInterface } from 'node:readline';
+import { parseArgs } from 'node:util';
 
 const { version } = JSON.parse(readFileSync(join(dirname(fileURLToPath(import.meta.url)), '..', 'package.json'), 'utf8'));
 
@@ -86,7 +87,21 @@ CI:
 Exit codes: 0 = below the --fail-on threshold, 1 = at or above it, 2 = usage or connection error.
 Only scan systems you own or are authorized to test.`;
 
-const FLAGS = { '--json': 'json', '--call-readonly': 'callReadonly', '--html': 'html', '--pdf': 'pdf', '--no-connect': 'noConnect', '--version': 'version', '--llm': 'llm', '--update-pins': 'updatePins', '--yes': 'yes' };
+// Boolean flags and the option key the code reads them as.
+const FLAGS = { json: 'json', 'call-readonly': 'callReadonly', html: 'html', pdf: 'pdf', 'no-connect': 'noConnect', version: 'version', llm: 'llm', 'update-pins': 'updatePins', yes: 'yes' };
+// Options that take a value; they keep their --name as the key (opts['fail-on']).
+const VALUES = [
+  'url', 'out', 'lang', 'client', 'sarif', 'sarif-uri', 'timeout', 'fail-on', 'ignore', 'pin', 'llm-model', 'path',
+  'target', 'model', 'system', 'field', 'reply', 'history-field', 'categories',
+  'tester', 'authby', 'role', 'scope', 'exclude', 'start', 'end',
+];
+/** @type {import('node:util').ParseArgsConfig['options']} */
+const OPTIONS = {
+  ...Object.fromEntries(Object.keys(FLAGS).map((f) => [f, { type: 'boolean' }])),
+  ...Object.fromEntries(VALUES.map((v) => [v, { type: 'string' }])),
+  version: { type: 'boolean', short: 'v' },
+  header: { type: 'string', multiple: true },
+};
 
 // `probe agent` actively attacks a live target. Testing a system you do not own
 // or control, without written authorization, is illegal in most countries. This
@@ -111,23 +126,25 @@ async function confirmAuthorization(opts) {
   if (!/^(y|yes|s|si|sí)$/i.test(answer.trim())) throw new Error('not confirmed — scan cancelled.');
 }
 
+// Everything after `--` is the MCP server command and is passed through untouched.
+// Unknown options are an error rather than silently ignored, so a typo in CI fails loudly.
 function parse(argv) {
-  const opts = { headers: {} };
-  const rest = [];
-  for (let i = 0; i < argv.length; i++) {
-    const a = argv[i];
-    if (a === '--') {
-      rest.push(...argv.slice(i + 1));
-      break;
-    }
-    if (FLAGS[a]) opts[FLAGS[a]] = true;
-    else if (a === '--header') {
-      const [k, ...v] = argv[++i].split(':');
-      opts.headers[k.trim()] = v.join(':').trim();
-    } else if (a.startsWith('--')) opts[a.slice(2)] = argv[++i];
-    else rest.push(a);
+  let parsed;
+  try {
+    parsed = parseArgs({ args: argv, options: OPTIONS, allowPositionals: true, strict: true });
+  } catch (err) {
+    throw new Error(`${err.message.replace(/\s*\n\s*/g, ' ').replace(/\.?$/, '.')} Run \`probe\` without arguments for usage.`);
   }
-  return { opts, rest };
+  const opts = { headers: {} };
+  for (const [key, value] of Object.entries(parsed.values)) {
+    if (key === 'header') {
+      for (const h of /** @type {string[]} */ (value)) {
+        const [k, ...v] = h.split(':');
+        opts.headers[k.trim()] = v.join(':').trim();
+      }
+    } else opts[FLAGS[key] ?? key] = value;
+  }
+  return { opts, rest: parsed.positionals };
 }
 
 function failThreshold(level = 'high') {

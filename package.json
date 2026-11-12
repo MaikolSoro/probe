@@ -1,6 +1,6 @@
 {
   "name": "@avenzoq/probe",
-  "version": "0.9.0",
+  "version": "0.9.1",
   "description": "Red-team your AI agents, MCP servers and skills before attackers do: tool poisoning, prompt injection, excessive agency, leaked secrets.",
   "keywords": [
     "mcp",
@@ -47,7 +47,8 @@
     "demo:mcp": "node src/cli.mjs mcp --call-readonly --out reports/demo-mcp -- node examples/vulnerable-mcp-server.mjs",
     "demo:agent": "node src/cli.mjs agent --url http://localhost:8787/chat --history-field messages --out reports/demo-agent",
     "bench": "node bench/run.mjs",
-    "demo:docs": "node src/cli.mjs docs examples/docs --out reports/demo-docs"
+    "demo:docs": "node src/cli.mjs docs examples/docs --out reports/demo-docs",
+    "typecheck": "tsc -p jsconfig.json"
   },
   "publishConfig": {
     "access": "public"
@@ -55,5 +56,9 @@
   "dependencies": {
     "@modelcontextprotocol/sdk": "^1.32.2",
     "zod": "^4.6.7"
+  },
+  "devDependencies": {
+    "@types/node": "20.19.25",
+    "typescript": "6.0.3"
   }
 }

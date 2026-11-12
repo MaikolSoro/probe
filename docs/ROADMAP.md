@@ -64,6 +64,19 @@
 
 ## Next (to make it useful for real users)
 
+> **Note (2026-11-10): features are paused; adoption comes first.** Probe already has more features than real users. The agreed order when work resumes:
+> 1. Publish 0.9.1 to npm (the founder runs `npm login` + `npm publish`; npm still has 0.6.2).
+> 2. Spanish/Portuguese injection patterns (item 4 below): small, closes a known gap in `probe docs`, and differentiates in Latin America.
+> 3. Publish the State of MCP Security study. It already ran on 2026-11-08 (80 targets, 39 started, 406 tools, 0 criticals) and the branded report is in `research/report/` (git-ignored); only disclosure and the owner's go-ahead remain. Gives content, credibility for selling audits, and real cases to tune the rules.
+>
+> Everything else (tripartite authorization, hidden Excel sheets, text in images) waits until a client or user asks for it.
+>
+> **Language and architecture (reviewed 2026-11-12):** plain Node ESM stays. The work is I/O-bound (starting servers, waiting on models), the MCP ecosystem is TypeScript/Python-first, distribution via `npx` matches how MCP servers are installed, and a memory-safe language matters for parsing hostile documents. If a client needs "no Node", package Probe as a single executable or a Docker image instead of rewriting it in Go. Internal improvements, **done on 2026-11-12** (findings unchanged on the bench, the research corpus, ~/Downloads and the workspace):
+> - **Type checking without a build step:** JSDoc types plus `checkJs` in `jsconfig.json`, `npm run typecheck` (dev-only TypeScript). Not yet in CI: `.github/` is not pushed (token lacks the workflow scope).
+> - **Split `docs-scan.mjs`** (826 lines) into `src/docs/pdf.mjs`, `ooxml.mjs`, `html.mjs` and `shared.mjs`; `checkSegments` stays in `docs-scan.mjs`.
+> - **Rules as data:** injection patterns live in `src/rules/en.mjs`, `es.mjs`, `pt.mjs`. The Spanish/Portuguese pack (step 2 above) now only adds data there. Still in code: the skills rules in `skills-scan.mjs` (English only), to move when that pack is written.
+> - **CLI parsing:** `cli.mjs` uses the built-in `node:util` `parseArgs`; unknown options are now an error.
+
 1. **Run the State of MCP Security study:** start Docker, run `research/run.mjs`, review the criticals by hand, disclose, then publish the aggregate report.
 2. **Held-out benchmark:** new cases written without looking at the rules, plus an LLM-judge column.
 3. **LLM judge for agent replies:** classify partial leaks and soft compliance that canaries miss.

@@ -21,10 +21,10 @@ function toolResult(scan) {
   const findings = scan.findings.map((f) => ({ id: f.id, severity: f.severity, title: f.title, where: f.tool, owasp: f.owasp }));
   const data = { kind: scan.kind, target: scan.target, counts: counts(scan.findings), inconclusive: scan.inconclusive ?? null, findings };
   const text = `${printSummary(scan, { color: false })}\n\n\`\`\`json\n${JSON.stringify(data, null, 2)}\n\`\`\``;
-  return { content: [{ type: 'text', text }] };
+  return { content: [{ type: /** @type {const} */ ('text'), text }] };
 }
 
-const fail = (message) => ({ content: [{ type: 'text', text: `probe: ${message}` }], isError: true });
+const fail = (message) => ({ content: [{ type: /** @type {const} */ ('text'), text: `probe: ${message}` }], isError: true });
 
 export function buildServer({ name = 'avenzoq-probe', version = '0.0.0' } = {}) {
   const server = new McpServer({ name, version });

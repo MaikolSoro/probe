@@ -14,7 +14,7 @@ Requires Node.js 20 or later. The code is plain ESM (`.mjs`) with no build step.
 
 ## Adding a rule or a probe
 
-1. **Rule:** add it in `src/rules.mjs` (MCP tools), `src/skills-scan.mjs` (skills and instruction files) or `src/config-scan.mjs` (client configs). **Probe:** add it in `src/payloads.mjs` (agent probes).
+1. **Rule:** injection phrases go in the language packs `src/rules/en.mjs`, `es.mjs` or `pt.mjs` (data only: add patterns under an existing rule key, or add a key and its description to `RULES` in `src/rules.mjs`). Other MCP tool checks go in `src/rules.mjs`, `src/skills-scan.mjs` (skills and instruction files) or `src/config-scan.mjs` (client configs). **Probe:** add it in `src/payloads.mjs` (agent probes).
 2. Give it a stable `id`, a `severity` (`critical`, `high`, `medium`, `low`) and its OWASP LLM Top 10 (2025) category.
 3. Add a plain-language entry, in **English and Spanish**, to `src/guidance.mjs`. It feeds the client report.
 4. Add a test in `test/` that covers a true positive and a near-miss that must **not** match.
